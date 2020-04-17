@@ -1,0 +1,74 @@
+---
+- name: This playbook install OKD 3.11 on a local server
+  hosts: localhost
+  vars:
+    installer_path: "/home/{{ ansible_user_id }}/.okd"
+  tasks:
+    - name: "[HOST] Assert virtualization is available to run KVM"
+      block:
+        - name: Retrieve CPU architecture information
+          shell: lscpu
+          register: cpu_architecture_information
+        - debug:
+            msg: "{{ cpu_architecture_information }}"
+        - name: Assert is kvm capable
+          assert:
+            that:
+              - "'VT-x' in cpu_architecture_information.stdout"
+            fail_msg: "CPU does not support virtualization"
+            success_msg: "CPU does support virtualization"
+    - name: "[HOST] Install necessary package"
+      block:
+        - name: Install kvm packages
+          yum:
+            name: "{{ packages }}"
+          vars:
+            packages:
+              - qemu-kvm
+              - libvirt
+              - libvirt-python
+              - libguestfs-tools
+              - virt-install
+        - name: Install needed package for qemu following fail to use fw_cfg https://www.spinics.net/lists/centos/msg166715.html
+          yum:
+            name: "{{ packages }}"
+          vars:
+            packages:
+              - centos-release-qemu-ev
+              - qemu-kvm-ev
+        - name: Install python3 package
+          yum:
+            name: "{{ packages }}"
+          vars:
+            packages:
+              - python3
+        - name: Install jq
+          get_url:
+            url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+            dest: /usr/local/bin/jq
+            mode: u=rwx,g=rx,o=rx
+            owner: root
+            group: root
+      become: true
+      become_user: root
+    - name: "[HOST] Manage kvm service"
+      block:
+        - name: Enable libvirtd service
+          shell: systemctl enable libvirtd
+        - name: Start libvirtd service
+          shell: systemctl start libvirtd
+      become: true
+      become_user: root
+    - name: "[HOST] Create OKD network"
+      include: create_vlan_network.yaml
+      vars:
+        bridge_name: "virbr1"
+        bridge_mac: "52:54:00:00:05:01"
+        bridge_ip: "10.0.5.1"
+        bridge_netmask: "255.255.255.0"
+        dhcp_range_start: "10.0.5.10"
+        dhcp_range_end: "10.0.5.254"
+        dns_ip: "10.0.5.10"
+        guests_vms_networks:
+          - {'mac': '52:54:00:00:05:10', ip: '10.0.5.10'}
+          - {'mac': '52:54:00:00:05:50', ip: '10.0.5.50'}
