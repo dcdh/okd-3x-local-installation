@@ -1,0 +1,53 @@
+---
+- name: Delete dns virtual machine
+  vars:
+    vm_name: "{{ dns_fqdn }}"
+  block:
+    - name: Delete {{ vm_name }} virtual machine data
+      file:
+        path: "/home/{{ ansible_user_id }}/.okd/vms/{{ vm_name }}"
+        state: absent
+    - name: List virtual machines
+      virt:
+        command: list_vms
+        uri: "qemu:///session"
+      register: vms
+    - debug:
+        msg: "{{ vms }}"
+    - name: Destroy {{ vm_name }} virtual machine
+      virt:
+        command: destroy
+        name: "{{ vm_name }}"
+        uri: "qemu:///session"
+      when: vm_name in vms.list_vms
+    - name: Undefine {{ vm_name }} virtual machine
+      virt:
+        command: undefine
+        name: "{{ vm_name }}"
+        uri: "qemu:///session"
+      when: vm_name in vms.list_vms
+    - name: Remove {{ vm_name }} virtual machine host from known_hosts
+      lineinfile:
+        path: "/home/{{ ansible_user_id }}/.ssh/known_hosts"
+        state: absent
+        regexp: '^.*{{ dns_ip }}.*$'
+    - name: Restore Host NetworkManager.conf
+      block:
+        - name: Remove dns=none configuration from /etc/NetworkManager/NetworkManager.conf
+          lineinfile:
+            path: /etc/NetworkManager/NetworkManager.conf
+            state: absent
+            regexp: '^dns\=none'
+            backup: yes
+        - name: Unlock /etc/resolv.conf to avoid to be rewritten at startup
+          shell: chattr -i /etc/resolv.conf
+        - name: Remove dns virtual machine ip {{ dns_ip }} entry into /etc/resolv.conf
+          lineinfile:
+            path: /etc/resolv.conf
+            state: absent
+            regexp: '^nameserver {{ dns_ip }}'
+            backup: yes
+        - name: Reload NetworkManager service
+          shell: systemctl reload NetworkManager
+      become: true
+      become_user: root

@@ -3,8 +3,26 @@
   hosts: localhost
   vars:
     installer_path: "/home/{{ ansible_user_id }}/.okd"
+    dns_ip: "10.0.5.10"
+    dns_fqdn: "dns.local"
   tasks:
     - name: "[HOST] Delete OKD network"
       include: delete_vlan_network.yaml
       vars:
         bridge_name: "virbr1"
+    - name: "[HOST] Remove fix bridge permissions for user"
+      block:
+        - name: Remove user conf
+          file:
+            path: /etc/qemu-kvm/{{ ansible_user_id }}.conf
+            state: absent
+        - name: Dereference user conf from bridge.xml
+          lineinfile:
+            path: /etc/qemu-kvm/bridge.conf
+            regexp: "include /etc/qemu-kvm/{{ ansible_user_id }}.conf"
+            state: absent
+            backup: yes
+      become: true
+      become_user: root
+    - name: "[GUEST DNS] Delete guest dns virtual machine"
+      include: delete_dns_vm.yaml

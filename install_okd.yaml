@@ -3,6 +3,26 @@
   hosts: localhost
   vars:
     installer_path: "/home/{{ ansible_user_id }}/.okd"
+    ssh_public_key: "/home/{{ ansible_user_id }}/.ssh/id_rsa.pub"
+    bridge_name: "virbr1"
+    bridge_mac: "52:54:00:00:05:01"
+    bridge_ip: "10.0.5.1"
+    bridge_netmask: "255.255.255.0"
+    dhcp_range_start: "10.0.5.10"
+    dhcp_range_end: "10.0.5.254"
+    dns_ip: "10.0.5.10"
+    dns_mac: "52:54:00:00:05:10"
+    dns_fqdn: "dns.local"
+    okd_master_ip: "10.0.5.50"
+    okd_master_mac: "52:54:00:00:05:50"
+    domain: "master.okd.local"
+    guests_vms_networks:
+      - {mac: "{{ dns_mac }}", ip: "{{ dns_ip }}"}
+      - {mac: "{{ okd_master_mac }}", ip: "{{ okd_master_ip }}"}
+    dns_entries:
+      - {ip: "{{ dns_ip }}", fqdn: "{{ dns_fqdn }}"}
+      - {ip: "{{ okd_master_ip }}", fqdn: "{{ domain }}"}
+      - {ip: "{{ okd_master_ip }}", fqdn: "console.{{ domain }}"}
   tasks:
     - name: "[HOST] Assert virtualization is available to run KVM"
       block:
@@ -51,6 +71,24 @@
             group: root
       become: true
       become_user: root
+    - name: "[HOST] Add fix bridge permissions for user"
+      block:
+        - name: Create user conf
+          copy:
+            dest: /etc/qemu-kvm/{{ ansible_user_id }}.conf
+            content: |
+              allow all
+            mode: 640
+            owner: root
+            group: "{{ ansible_user_id }}"
+        - name: Include user conf in bridge.conf if not present
+          lineinfile:
+            path: /etc/qemu-kvm/bridge.conf
+            state: present
+            line: "include /etc/qemu-kvm/{{ ansible_user_id }}.conf"
+            backup: yes
+      become: true
+      become_user: root
     - name: "[HOST] Manage kvm service"
       block:
         - name: Enable libvirtd service
@@ -61,14 +99,7 @@
       become_user: root
     - name: "[HOST] Create OKD network"
       include: create_vlan_network.yaml
-      vars:
-        bridge_name: "virbr1"
-        bridge_mac: "52:54:00:00:05:01"
-        bridge_ip: "10.0.5.1"
-        bridge_netmask: "255.255.255.0"
-        dhcp_range_start: "10.0.5.10"
-        dhcp_range_end: "10.0.5.254"
-        dns_ip: "10.0.5.10"
-        guests_vms_networks:
-          - {'mac': '52:54:00:00:05:10', ip: '10.0.5.10'}
-          - {'mac': '52:54:00:00:05:50', ip: '10.0.5.50'}
+    - name: "[GUEST DNS] Create guest dns virtual machine"
+      include: create_dns_vm.yaml
+
+# a la fin ceci doit être accessible https://console.master.okd.local:8443/

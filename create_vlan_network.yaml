@@ -13,6 +13,7 @@
           ONBOOT="yes"
           TYPE="Bridge"
           NM_CONTROLLED="no"
+          PEERDNS="no"
     - name: Restart service network
       systemd:
         state: restarted
