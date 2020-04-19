@@ -1,0 +1,21 @@
+# restore Host NetworkManager.conf
+
+- name: remove dns=none configuration from /etc/NetworkManager/NetworkManager.conf
+  lineinfile:
+    path: /etc/NetworkManager/NetworkManager.conf
+    state: absent
+    regexp: '^dns\=none'
+    backup: yes
+
+- name: unlock /etc/resolv.conf to avoid to be rewritten at startup
+  shell: chattr -i /etc/resolv.conf
+
+- name: remove dns virtual machine ip {{ vm_ip }} entry into /etc/resolv.conf
+  lineinfile:
+    path: /etc/resolv.conf
+    state: absent
+    regexp: '^nameserver {{ vm_ip }}'
+    backup: yes
+
+- name: reload NetworkManager service
+  shell: systemctl reload NetworkManager

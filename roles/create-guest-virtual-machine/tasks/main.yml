@@ -1,0 +1,19 @@
+---
+# tasks file for create-guest-virtual-machine
+
+- include_tasks: assert_preconditions.yml
+
+- include_tasks: install_required_packages_and_tools.yml
+
+- include_tasks: fix_bridge_permissions_for_user.yml
+
+- name: enable libvirtd service
+  shell: systemctl enable libvirtd
+
+- name: start libvirtd service
+  shell: systemctl start libvirtd
+
+- include_tasks: create_virtual_machine.yml
+
+- name: should dns guest virtual machine resolved all dns entries
+  include_tasks: check_dns_guest_vm_configuration.yml

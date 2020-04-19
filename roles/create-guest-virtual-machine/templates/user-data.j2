@@ -1,0 +1,95 @@
+#cloud-config
+
+# Hostname management
+preserve_hostname: False
+hostname: {{ vm_fqdn }}
+fqdn: {{ vm_fqdn }}
+manage_etc_hosts: true
+cloud_config_modules:
+  - resolv_conf
+  - package-update-upgrade-install
+  - runcmd
+manage_resolv_conf: true
+resolv_conf:
+  nameservers: ['127.0.0.1','8.8.8.8']
+
+# Users
+users:
+    - default
+    - name: {{ ansible_user_id }}
+      groups: ['wheel']
+      shell: /bin/bash
+      sudo: ALL=(ALL) NOPASSWD:ALL
+      ssh-authorized-keys:
+        - {{ lookup('file', ssh_public_key) }}
+
+# Configure where output will go
+output:
+  all: ">> /var/log/cloud-init.log"
+
+# configure interaction with ssh server
+ssh_genkeytypes: ['ed25519', 'rsa']
+
+# Install my public ssh key to the first user-defined user configured
+# in cloud.cfg in the template (which is centos for CentOS cloud images)
+ssh_authorized_keys:
+  - {{ lookup('file', ssh_public_key) }}
+
+timezone: US/Eastern
+
+{% if vm_ip == dns_ip %}
+
+########################################################################################################################
+# DNS init configuration
+########################################################################################################################
+
+packages:
+  - dnsmasq
+  - bind-utils
+
+write_files:
+  - content: |
+      address=/{{ domain }}/{{ okd_master_ip }}
+      no-hosts
+      addn-hosts=/etc/dnsmasq.okd.addnhosts
+      conf-dir=/etc/dnsmasq.d,.rpmnew,.rpmsave,.rpmorig
+
+      cache-size=10000
+      log-dhcp
+      log-queries=extra
+      log-facility=/var/log/dnsmasq.log
+    path: /run/myconf/dnsmasq.conf
+  - content: |
+{% for dns_entry in dns_entries %}
+      {{ dns_entry.ip }} {{ dns_entry.fqdn }}
+{% endfor %}
+    path: /run/myconf/dnsmasq.okd.addnhosts
+  - content: |
+      # The objectif is to overide the definition of nameserver in /etc/resolv.conf if the vm restart
+      # You can define the localhost or virtual machine ip as nameserver but NOT the bridge ip however it will constantly loop
+      # when you will define it as primary nameserver on the host. You will not be able to resolve ip and to connect via ssh.
+      # The dns virtual machine will be used as primary dns. If it fails to resolve the secondary dns will handle it
+      supersede domain-name-servers 127.0.0.1,8.8.8.8;
+      timeout 300;
+      retry 60;
+    path: /etc/dhcp/dhclient.conf
+
+# Remove cloud-init when finished with it
+runcmd:
+  - systemctl stop network && systemctl start network
+  - systemctl disable cloud-init.service
+  - /bin/cp /run/myconf/dnsmasq.conf /etc/dnsmasq.conf
+  - /bin/cp /run/myconf/dnsmasq.okd.addnhosts /etc/dnsmasq.okd.addnhosts
+  - systemctl enable dnsmasq
+  - systemctl start dnsmasq
+
+{% elif false %}
+
+########################################################################################################################
+# OTHER init configuration here ...
+########################################################################################################################
+
+{% endif %}
+
+# The message is located in /var/log/cloud-init.log
+final_message: "The system is finally up, after $UPTIME seconds"

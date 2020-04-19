@@ -1,0 +1,112 @@
+- name: list virtual machines
+  virt:
+    command: list_vms
+    uri: "qemu:///session"
+  register: vms
+
+- name: create {{ vm_name }} virtual machine
+  block:
+    - name: create {{ vm_name }} virtual machine directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+      with_items:
+        - "{{ images_path }}"
+        - "{{ vm_path }}"
+
+    - name: check if cloud image is present
+      stat:
+        path: "{{ images_path }}/{{ cloud_image_name }}"
+      register: cloud_image
+
+    - name: download cloud image
+      get_url:
+        url: "{{ cloud_image_url }}"
+        dest: "{{ images_path }}"
+        sha256sum: "{{ sha256sum }}"
+      when: cloud_image.stat.exists == False
+
+    - name: copy cloud image from images to {{ vm_name }} virtual machine
+      copy:
+        src: "{{ images_path }}/{{ cloud_image_name }}"
+        dest: "{{ vm_path }}/{{ cloud_image_name }}"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        force: no
+
+    - name: create meta-data file
+      copy:
+        dest: "{{ vm_path }}/meta-data"
+        content: |
+          instance-id: {{ vm_name }}
+          local-hostname: {{ vm_name }}
+
+    - name: create user-data file
+      template:
+        dest: "{{ vm_path }}/user-data"
+        src: user-data.j2
+
+    - name: create boot init iso
+      shell:
+        cmd: genisoimage -output {{ boot_init_iso_path }} -volid cidata -joliet -r {{ vm_path }}/user-data {{ vm_path }}/meta-data
+
+    - name: define {{ vm_name }} virtual machine
+      virt:
+        command: define
+        name: "{{ vm_name }}"
+        xml: "{{ lookup('template', 'vm.xml.j2') }}"
+        uri: "qemu:///session"
+      vars:
+        name: "{{ vm_name }}"
+        memory: "{{ memory }}"
+        vcpus: "{{ vcpus }}"
+        disk_file: "{{ vm_path }}/{{ cloud_image_name }}"
+        boot_init_iso: "{{ boot_init_iso_path }}"
+        vm_mac: "{{ vm_mac }}"
+        vm_bridge: "{{ bridge_name }}"
+
+    - name: start {{ vm_name }} vm
+      virt:
+        command: start
+        name: "{{ vm_name }}"
+        autostart: yes
+        uri: "qemu:///session"
+
+    - name: register ssh guest virtual machine into host
+      block:
+        - name: retrieve {{ vm_name }} virtual machine public key - need to retry as ssh may not be available yet and an empty valide response can be returned too :(
+          shell: ssh-keyscan -t ssh-rsa {{ vm_ip }}
+          register: task_result
+          until: task_result.rc == 0 and task_result.stdout != ''
+          retries: 120
+          delay: 5
+
+        - name: write {{ vm_name }} virtual machine public key into Host known hosts
+          lineinfile:
+            path: /home/{{ ansible_user_id }}/.ssh/known_hosts
+            insertafter: EOF
+            line: "{{ vm_fqdn }},{{ task_result.stdout }}"
+            backup: yes
+
+    - name: wait until {{ vm_name }} virtual machine is ready
+      shell: ssh centos@{{ vm_ip }} 'sudo grep -nri "The system is finally up" /var/log/cloud-init.log' > /dev/null
+      register: task_result
+      until: task_result.rc == 0
+      retries: 120
+      delay: 5
+
+    - name: remove boot-init.iso from {{ vm_name }} vm
+      shell: virsh change-media {{ vm_name }} --path {{ boot_init_iso_path }} --eject --config
+
+    - name: check dns virtual machine
+      include_tasks: check_dns_virtual_machine.yml
+      when: vm_ip == dns_ip
+
+  become_user: "{{ ansible_user_id }}"
+  when: vm_name not in vms.list_vms
+
+- name: host dns setup
+  include_tasks: host_dns_setup.yml
+  when: vm_ip == dns_ip

@@ -1,34 +1,45 @@
 ---
-- name: Delete virtual machine
-  vars:
-    vm_name: "{{ vm_name }}"
-    vm_ip: "{{ vm_ip }}"
+# tasks file for delete-guest-virtual-machine
+- include_tasks: assert_preconditions.yml
+
+- name: delete {{ vm_name }}
   block:
-    - name: Delete {{ vm_name }} virtual machine data
+    - name: delete {{ vm_name }} virtual machine data
       file:
         path: "/home/{{ ansible_user_id }}/.okd/vms/{{ vm_name }}"
         state: absent
-    - name: List virtual machines
+
+    - name: list virtual machines
       virt:
         command: list_vms
         uri: "qemu:///session"
       register: vms
+
     - debug:
-        msg: "{{ vms }}"
-    - name: Destroy {{ vm_name }} virtual machine
+        msg: "{{ vms.list_vms }}"
+
+    - name: destroy {{ vm_name }} virtual machine
       virt:
         command: destroy
         name: "{{ vm_name }}"
         uri: "qemu:///session"
+      ignore_errors: yes
       when: vm_name in vms.list_vms
-    - name: Undefine {{ vm_name }} virtual machine
+
+    - name: undefine {{ vm_name }} virtual machine
       virt:
         command: undefine
         name: "{{ vm_name }}"
         uri: "qemu:///session"
+      ignore_errors: yes
       when: vm_name in vms.list_vms
-    - name: Remove {{ vm_name }} virtual machine host from known_hosts
+
+    - name: remove {{ vm_name }} virtual machine host from known_hosts
       lineinfile:
         path: "/home/{{ ansible_user_id }}/.ssh/known_hosts"
         state: absent
         regexp: '^.*{{ vm_ip }}.*$'
+  become_user: "{{ ansible_user_id }}"
+
+- include_tasks: dns.yml
+  when: is_dns_vm

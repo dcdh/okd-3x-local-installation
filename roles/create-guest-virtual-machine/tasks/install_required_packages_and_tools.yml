@@ -1,0 +1,30 @@
+- name: install kvm packages
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - qemu-kvm
+      - libvirt
+      - libvirt-python
+      - libguestfs-tools
+      - virt-install
+- name: install needed package for qemu following fail to use fw_cfg https://www.spinics.net/lists/centos/msg166715.html
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - centos-release-qemu-ev
+      - qemu-kvm-ev
+- name: install python3 package
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - python3
+- name: install jq
+  get_url:
+    url: https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+    dest: /usr/local/bin/jq
+    mode: u=rwx,g=rx,o=rx
+    owner: root
+    group: root

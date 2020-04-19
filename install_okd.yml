@@ -1,0 +1,35 @@
+---
+- name: This playbook install OKD 3.11 on a local server
+  hosts: localhost
+
+  vars:
+    bridge_name: "virbr5"
+    bridge_ip: "10.0.5.1"
+    dns_ip: "10.0.5.10"
+    dns_fqdn: "dns.local"
+    dns_mac: "52:54:00:00:05:10"
+    okd_master_ip: "10.0.5.50"
+    okd_master_mac: "52:54:00:00:05:50"
+    domain: "master.okd.local"
+
+    # TODO ne concerne que la creation du vlan network
+    guests_vms_networks:
+      - { mac: "{{ dns_mac }}", ip: "{{ dns_ip }}" }
+      - { mac: "{{ okd_master_mac }}", ip: "{{ okd_master_ip }}" }
+    # TODO ne concerne que la creation de la virtual machine dns
+    dns_entries:
+      - { ip: "{{ dns_ip }}", fqdn: "{{ dns_fqdn }}" }
+      - { ip: "{{ okd_master_ip }}", fqdn: "{{ domain }}" }
+      - { ip: "{{ okd_master_ip }}", fqdn: "console.{{ domain }}" }
+
+  vars_prompt:
+    - name: ansible_become_password
+      prompt: "What is your password ?"
+      private: yes
+
+  roles:
+    - { role: create-vlan-network, bridge_mac: "52:54:00:00:05:01", bridge_netmask: "255.255.255.0", dhcp_range_start: "10.0.5.10", dhcp_range_end: "10.0.5.254" }
+    - { role: create-guest-virtual-machine, vm_name: "{{ dns_fqdn }}", vm_mac: "{{ dns_mac }}", vm_ip: "{{ dns_ip }}", vm_fqdn: "{{ dns_fqdn }}", memory: 1024, vcpus: 1 }
+
+
+# a la fin ceci doit être accessible https://console.master.okd.local:8443/

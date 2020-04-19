@@ -1,0 +1,67 @@
+- name: assert bridge_name variable is defined
+  assert:
+    that:
+      - "bridge_name | length > 0"
+    fail_msg: "bridge_name must be define"
+    success_msg: "bridge_name define to {{ bridge_name }}"
+
+- name: assert bridge_ip variable is defined
+  assert:
+    that:
+      - "bridge_ip | length > 0"
+    fail_msg: "bridge_ip must be define"
+    success_msg: "bridge_ip define to {{ bridge_ip }}"
+
+- name: assert bridge_mac variable is defined
+  assert:
+    that:
+      - "bridge_mac | length > 0"
+    fail_msg: "bridge_mac must be define"
+    success_msg: "bridge_mac define to {{ bridge_mac }}"
+
+- name: assert bridge_netmask variable is defined
+  assert:
+    that:
+      - "bridge_netmask | length > 0"
+    fail_msg: "bridge_netmask must be define"
+    success_msg: "bridge_netmask define to {{ bridge_netmask }}"
+
+- name: assert dhcp_range_start variable is defined
+  assert:
+    that:
+      - "dhcp_range_start | length > 0"
+    fail_msg: "dhcp_range_start must be define"
+    success_msg: "dhcp_range_start define to {{ dhcp_range_start }}"
+
+- name: assert dhcp_range_end variable is defined
+  assert:
+    that:
+      - "dhcp_range_end | length > 0"
+    fail_msg: "dhcp_range_end must be define"
+    success_msg: "dhcp_range_end define to {{ dhcp_range_end }}"
+
+- name: assert dns_ip variable is defined
+  assert:
+    that:
+      - "dns_ip | length > 0"
+    fail_msg: "dns_ip must be define"
+    success_msg: "dns_ip define to {{ dns_ip }}"
+
+- name: assert guests_vms_networks variable is defined
+  assert:
+    that:
+      - "guests_vms_networks | length > 0"
+    fail_msg: "guests_vms_networks must be define"
+    success_msg: "guests_vms_networks define to {{ guests_vms_networks }}"
+
+- name: assert interface {{ bridge_name }} does not exists
+  block:
+    - name: list all interfaces event the one inactives
+      shell: ifconfig -a | sed -E 's/[[:space:]:].*//;/^$/d'
+      register: interfaces
+    - name: assert interface {{ bridge_name }} does not exists
+      assert:
+        that:
+          - "bridge_name not in interfaces.stdout_lines"
+        fail_msg: "{{ bridge_name }} already existent. Please remove it before relaunching installation"
+        success_msg: "{{ bridge_name }} does not exists. Let's go creating it !"

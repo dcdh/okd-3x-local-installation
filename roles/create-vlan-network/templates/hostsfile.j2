@@ -1,0 +1,3 @@
+{% for guest_vm_network in guests_vms_networks %}
+{{ guest_vm_network.mac }},{{ guest_vm_network.ip }}
+{% endfor %}

@@ -1,0 +1,49 @@
+---
+# tasks file for create-vlan-network
+
+- include_tasks: assert_preconditions.yml
+
+- name: add {{ bridge_name }} virtual lan bridge
+  template:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ bridge_name }}
+    src: ifcfg-virbr.j2
+
+- name: do not bind {{ bridge_name }} into Host system dnsmasq by excluding it
+  template:
+    dest: /etc/dnsmasq.d/{{ bridge_name }}.conf
+    src: virbr.conf.j2
+
+- name: restart network service
+  shell: systemctl restart network
+
+- name: setup Host {{ bridge_name }} dnsmasq used for dhcp configuration
+  include_tasks: setup_dnsmasq_dhcp_configuration.yml
+
+- name: forward connection from host internet interface to {{ bridge_name }}
+  include_tasks: forward_connection_to_vlan.yml
+
+- name: should interface {{ bridge_name }} is created
+  shell: ifconfig -a | sed -E 's/[[:space:]:].*//;/^$/d'
+  register: interfaces
+  until: bridge_name in interfaces.stdout_lines
+  retries: 120
+  delay: 5
+
+- name: should defined dnsmasq be reachable
+  wait_for:
+    host: "{{ bridge_ip }}"
+    port: 53
+    state: drained
+    delay: 10
+
+- name: should check dnsmasq started by log exsists
+  block:
+    - name: get file
+      stat:
+        path: /var/log/dnsmasq-{{ bridge_name }}.log
+      register: dnsmasq_log
+    - assert:
+        that:
+          - "dnsmasq_log.stat.exists == True"
+        fail_msg: "Missing '/var/log/dnsmasq-{{ bridge_name }}.log' file - Something wrong happened !!! Does the service has been start at expected time ?"
+        success_msg: "File '/var/log/dnsmasq-{{ bridge_name }}.log' is present - dnsmasq seems to work"

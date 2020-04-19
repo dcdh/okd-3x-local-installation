@@ -1,0 +1,65 @@
+---
+# tasks file for delete-vlan-network
+- include_tasks: assert_preconditions.yml
+
+- name: delete {{ bridge_name }} interface
+  file:
+    path: /etc/sysconfig/network-scripts/ifcfg-{{ bridge_name }}
+    state: absent
+
+- name: delete interface
+  shell: ip link delete {{ bridge_name }} type bridge
+  ignore_errors: yes
+
+- name: disable dnsmasq service
+  shell: systemctl disable dnsmasq@{{ bridge_name }}.service
+
+- name: stop dnsmasq service
+  shell: systemctl stop dnsmasq@{{ bridge_name }}.service
+
+- name: reload systemctl daemon
+  shell: systemctl daemon-reload
+
+- name: restart network service
+  shell: systemctl restart network
+
+- name: assert interface {{ bridge_name }} does not exists anymore
+  block:
+    - name: list all interfaces event the one inactives
+      shell: ifconfig -a | sed -E 's/[[:space:]:].*//;/^$/d'
+      register: interfaces
+
+    - name: assert interface {{ bridge_name }} does not exists
+      assert:
+        that:
+          - "bridge_name not in interfaces.stdout_lines"
+        fail_msg: "{{ bridge_name }} has not been removed"
+        success_msg: "{{ bridge_name }} does not exists anymore"
+
+- name: delete host {{ bridge_name }} configurations
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/var/lib/dnsmasq/{{ bridge_name }}"
+    - "/etc/dnsmasq.d/{{ bridge_name }}.conf"
+
+- name: delete host {{ bridge_name }} log
+  file:
+    path: /var/log/dnsmasq-{{ bridge_name }}.log
+    state: absent
+
+# Remove all previous forward rules regarding {{ bridge_name }}
+# https://stackoverflow.com/questions/25055121/can-i-remove-multiple-matching-rules-with-the-iptables-delete-command
+- name: flush iptable entries
+  shell: "iptables -S FORWARD | grep {{ bridge_name }} | cut -d ' ' -f 2- | xargs -rL1 iptables -D"
+
+- name: save iptable rules
+  shell: "service iptables save"
+
+- name: should interface {{ bridge_name }} is removed
+  shell: ifconfig -a | sed -E 's/[[:space:]:].*//;/^$/d'
+  register: interfaces
+  until: bridge_name not in interfaces.stdout_lines
+  retries: 120
+  delay: 5

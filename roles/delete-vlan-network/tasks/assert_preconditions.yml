@@ -1,0 +1,6 @@
+- name: assert bridge_name variable is defined
+  assert:
+    that:
+      - "bridge_name | length > 0"
+    fail_msg: "bridge_name must be define"
+    success_msg: "bridge_name define to {{ bridge_name }}"

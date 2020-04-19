@@ -1,0 +1,83 @@
+- name: assert bridge_name variable is defined
+  assert:
+    that:
+      - "bridge_name | length > 0"
+    fail_msg: "bridge_name must be define"
+    success_msg: "bridge_name define to {{ bridge_name }}"
+
+- name: assert vm_name variable is defined
+  assert:
+    that:
+      - "vm_name | length > 0"
+    fail_msg: "vm_name must be define"
+    success_msg: "vm_name define to {{ vm_name }}"
+
+- name: assert vm_mac variable is defined
+  assert:
+    that:
+      - "vm_mac | length > 0"
+    fail_msg: "vm_mac must be define"
+    success_msg: "vm_mac define to {{ vm_mac }}"
+
+- name: assert vm_ip variable is defined
+  assert:
+    that:
+      - "vm_ip | length > 0"
+    fail_msg: "vm_ip must be define"
+    success_msg: "vm_ip define to {{ vm_ip }}"
+
+- name: assert vm_fqdn variable is defined
+  assert:
+    that:
+      - "vm_fqdn | length > 0"
+    fail_msg: "vm_fqdn must be define"
+    success_msg: "vm_fqdn define to {{ vm_fqdn }}"
+
+- name: assert dns_entries variable is defined
+  assert:
+    that:
+      - "dns_entries | length > 0"
+    fail_msg: "dns_entries must be define"
+    success_msg: "dns_entries define to {{ dns_entries }}"
+
+- name: assert domain variable is defined
+  assert:
+    that:
+      - "domain | length > 0"
+    fail_msg: "domain must be define"
+    success_msg: "domain define to {{ domain }}"
+
+- name: assert okd_master_ip variable is defined
+  assert:
+    that:
+      - "okd_master_ip | length > 0"
+    fail_msg: "okd_master_ip must be define"
+    success_msg: "okd_master_ip define to {{ okd_master_ip }}"
+
+- name: assert memory variable is defined
+  assert:
+    that:
+      - "memory is defined"
+      - memory >= 1024
+    fail_msg: "memory must be define and >= 1024"
+    success_msg: "memory define to {{ memory }}"
+
+- name: assert vcpus variable is defined
+  assert:
+    that:
+      - "vcpus is defined"
+      - vcpus > 0
+    fail_msg: "vcpus must be define and > 0"
+    success_msg: "vcpus define to {{ vcpus }}"
+
+- name: assert virtualization is available on Host to run KVM
+  block:
+    - name: retrieve Host CPU architecture information
+      shell: lscpu
+      register: cpu_architecture_information
+    - name: assert KVM can be used regarding Host CPU architecture
+      assert:
+        that:
+          - "'VT-x' in cpu_architecture_information.stdout"
+        fail_msg: "CPU does not support virtualization"
+        success_msg: "CPU does support virtualization"

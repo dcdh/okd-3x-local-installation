@@ -1,0 +1,63 @@
+- name: create {{ bridge_name }} directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: u=rwx,g=rx,o=rx
+    owner: "root"
+    group: "root"
+  with_items:
+    - "/var/lib/dnsmasq"
+    - "/var/lib/dnsmasq/{{ bridge_name }}"
+
+- name: create {{ bridge_name }} specific resolv.conf
+#    If a nameserver is defined to my dns.okd.local ip and defined to /etc/resolv.conf and this one is not started, making ssh request on dns.okd.local ip will hang.
+#    Example nameserver = 10.0.6.10 ... ssh damien@10.0.6.10 will do a lot of lookup on an unresponsive dns server. And it will be hard to connect and make my requests failing.
+#    I could get default nameserver but I prefer to rely to 8.8.8.8 google one !
+  copy:
+    dest: /var/lib/dnsmasq/{{ bridge_name }}/resolv.conf
+    src: resolv.conf
+    mode: u=rw,g=r,o=r
+    owner: root
+    group: root
+
+- name: create {{ bridge_name }} dnsmasq.conf
+  template:
+    dest: /var/lib/dnsmasq/{{ bridge_name }}/dnsmasq.conf
+    src: dnsmasq.conf.j2
+    mode: u=rw,g=r,o=r
+    owner: root
+    group: root
+
+- name: create {{ bridge_name }} hostsfile
+  template:
+    dest: /var/lib/dnsmasq/{{ bridge_name }}/hostsfile
+    src: hostsfile.j2
+    mode: u=rw,g=r,o=r
+    owner: root
+    group: root
+
+- name: create {{ bridge_name }} leases
+  copy:
+    dest: /var/lib/dnsmasq/{{ bridge_name }}/leases
+    src: leases
+    mode: u=rw,g=r,o=r
+    owner: root
+    group: root
+
+- name: create persistente execution of {{ bridge_name }} dnsmasq service
+  copy:
+    dest: /etc/systemd/system/dnsmasq@.service
+    src: dnsmasq@.service
+    mode: u=rwx,g=rx,o=rx
+    owner: root
+    group: root
+# can't use 'notify' to enable and start dnsmasq service as the file may already exists
+# the service file is shared by all custom network dnsmasq
+- name: enable {{ bridge_name }} dnsmasq service
+  shell: systemctl enable dnsmasq@{{ bridge_name }}.service
+
+- name: start {{ bridge_name }} dnsmasq service
+# the service can be already started by a previous run ... and call start again will do nothing and will not work as
+# expected because meanwhile files will be changed ... by doing a restart I ensure that my new conf will be used
+# and that will be working !
+  shell: systemctl restart dnsmasq@{{ bridge_name }}.service

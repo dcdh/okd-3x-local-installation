@@ -1,0 +1,35 @@
+# Only bind to the virtual bridge. This avoids conflicts with other running
+# dnsmasq instances.
+except-interface=lo
+interface={{ bridge_name }}
+bind-dynamic
+resolv-file=/var/lib/dnsmasq/{{ bridge_name }}/resolv.conf
+
+# If using dnsmasq 2.62 or older, remove "bind-dynamic" and "interface" lines
+# and uncomment these lines instead:
+#bind-interfaces
+#listen-address=192.168.100.1
+
+# IPv4 addresses to offer to VMs. This should match the chosen subnet.
+dhcp-range={{ dhcp_range_start }},{{ dhcp_range_end }}
+
+# Set this to at least the total number of addresses in DHCP-enabled subnets.
+dhcp-lease-max=1000
+
+# File to write DHCP lease information to.
+dhcp-leasefile=/var/lib/dnsmasq/{{ bridge_name }}/leases
+# File to read DHCP host information from.
+dhcp-hostsfile=/var/lib/dnsmasq/{{ bridge_name }}/hostsfile
+# Avoid problems with old or broken clients.
+dhcp-no-override
+# https://www.redhat.com/archives/libvir-list/2010-March/msg00038.html
+strict-order
+
+# expose dns to use by the dns VM.
+# /!\ Not working I do not why... I fix it in dns virtual machine cloud-init
+dhcp-option=6,{{ dns_ip }}
+
+cache-size=10000
+log-dhcp
+log-queries=extra
+log-facility=/var/log/dnsmasq-{{ bridge_name }}.log

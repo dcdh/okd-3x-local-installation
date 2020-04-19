@@ -1,0 +1,20 @@
+---
+- name: This playbook uninstall OKD 3.11 from a local server
+  hosts: localhost
+
+  vars:
+    bridge_name: "virbr5"
+    dns_ip: "10.0.5.10"
+    dns_fqdn: "dns.local"
+    okd_all_in_one_ip: "10.0.5.50"
+    okd_all_in_one_fqdn: "master.okd.local"
+
+  vars_prompt:
+    - name: ansible_become_password
+      prompt: "What is your password ?"
+      private: yes
+
+  roles:
+    - { role: delete-guest-virtual-machine, vm_name: "{{ dns_fqdn }}", vm_ip: "{{ dns_ip }}", is_dns_vm: true }
+    - { role: delete-guest-virtual-machine, vm_name: "{{ okd_all_in_one_fqdn }}", vm_ip: "{{ okd_all_in_one_ip }}", is_dns_vm: false }
+    - { role: delete-vlan-network }

@@ -1,0 +1,13 @@
+- name: assert vm_name variable is defined
+  assert:
+    that:
+      - "vm_name | length > 0"
+    fail_msg: "vm_name must be define"
+    success_msg: "vm_name define to {{ vm_name }}"
+
+- name: assert vm_ip variable is defined
+  assert:
+    that:
+      - "vm_ip | length > 0"
+    fail_msg: "vm_ip must be define"
+    success_msg: "vm_ip define to {{ vm_ip }}"

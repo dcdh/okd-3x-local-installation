@@ -1,0 +1,22 @@
+- block:
+    - name: should {{ vm_name }} virtual machine resolved full qualified domain name entries
+      include: check_dns_fqdn_vm_resolution.yml
+      vars:
+        ip_from: "{{ vm_ip }}"
+      with_items: "{{ dns_entries }}"
+
+    # TODO check SRV cf https://support.microsoft.com/fr-fr/help/816587/how-to-verify-that-srv-dns-records-have-been-created-for-a-domain-cont
+    - name: should external dns resolution is working in {{ vm_name }} virtual machine
+      block:
+        - name: execute external DNS resolution
+          shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'dig google.fr +short'
+          register: ips_resolved
+        - debug:
+            msg: "{{ ips_resolved }}"
+        - name: assert external host is resolved
+          assert:
+            that:
+              - "ips_resolved is defined"
+              - "ips_resolved.stdout_lines is defined"
+              - "ips_resolved.stdout_lines|length > 0"
+  become_user: "{{ ansible_user_id }}"
