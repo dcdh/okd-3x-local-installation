@@ -1,11 +1,11 @@
 ---
 # defaults file for create-vlan-network
-bridge_name: ""
-bridge_ip: ""
-bridge_mac: ""
-bridge_netmask: ""
-dhcp_range_start: ""
-dhcp_range_end: ""
-dns_ip: ""
+bridge_name:
+bridge_ip:
+bridge_mac:
+bridge_netmask:
+dhcp_range_start:
+dhcp_range_end:
+dns_ip:
 guests_vms_networks: []
 ansible_become: true

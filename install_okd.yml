@@ -27,9 +27,22 @@
       prompt: "What is your password ?"
       private: yes
 
-  roles:
-    - { role: create-vlan-network, bridge_mac: "52:54:00:00:05:01", bridge_netmask: "255.255.255.0", dhcp_range_start: "10.0.5.10", dhcp_range_end: "10.0.5.254" }
-    - { role: create-guest-virtual-machine, vm_name: "{{ dns_fqdn }}", vm_mac: "{{ dns_mac }}", vm_ip: "{{ dns_ip }}", vm_fqdn: "{{ dns_fqdn }}", memory: 1024, vcpus: 1 }
-
+  tasks:
+    - include_role:
+        name: create-vlan-network
+      vars:
+        - bridge_mac: "52:54:00:00:05:01"
+        - bridge_netmask: "255.255.255.0"
+        - dhcp_range_start: "10.0.5.10"
+        - dhcp_range_end: "10.0.5.254"
+    - include_role:
+        name: create-guest-virtual-machine
+      vars:
+        - vm_name: "{{ dns_fqdn }}"
+        - vm_mac: "{{ dns_mac }}"
+        - vm_ip: "{{ dns_ip }}"
+        - vm_fqdn: "{{ dns_fqdn }}"
+        - memory: 1024
+        - vcpus: 1
 
 # a la fin ceci doit être accessible https://console.master.okd.local:8443/

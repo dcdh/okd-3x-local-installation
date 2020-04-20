@@ -1,49 +1,49 @@
 - name: assert bridge_name variable is defined
   assert:
     that:
-      - "bridge_name | length > 0"
+      - "bridge_name is defined and bridge_name"
     fail_msg: "bridge_name must be define"
     success_msg: "bridge_name define to {{ bridge_name }}"
 
 - name: assert bridge_ip variable is defined
   assert:
     that:
-      - "bridge_ip | length > 0"
+      - "bridge_ip is defined and bridge_ip"
     fail_msg: "bridge_ip must be define"
     success_msg: "bridge_ip define to {{ bridge_ip }}"
 
 - name: assert bridge_mac variable is defined
   assert:
     that:
-      - "bridge_mac | length > 0"
+      - "bridge_mac is defined and bridge_mac"
     fail_msg: "bridge_mac must be define"
     success_msg: "bridge_mac define to {{ bridge_mac }}"
 
 - name: assert bridge_netmask variable is defined
   assert:
     that:
-      - "bridge_netmask | length > 0"
+      - "bridge_netmask is defined and bridge_netmask"
     fail_msg: "bridge_netmask must be define"
     success_msg: "bridge_netmask define to {{ bridge_netmask }}"
 
 - name: assert dhcp_range_start variable is defined
   assert:
     that:
-      - "dhcp_range_start | length > 0"
+      - "dhcp_range_start is defined and dhcp_range_start"
     fail_msg: "dhcp_range_start must be define"
     success_msg: "dhcp_range_start define to {{ dhcp_range_start }}"
 
 - name: assert dhcp_range_end variable is defined
   assert:
     that:
-      - "dhcp_range_end | length > 0"
+      - "dhcp_range_end is defined and dhcp_range_end"
     fail_msg: "dhcp_range_end must be define"
     success_msg: "dhcp_range_end define to {{ dhcp_range_end }}"
 
 - name: assert dns_ip variable is defined
   assert:
     that:
-      - "dns_ip | length > 0"
+      - "dns_ip is defined and dns_ip"
     fail_msg: "dns_ip must be define"
     success_msg: "dns_ip define to {{ dns_ip }}"
 

@@ -14,7 +14,20 @@
       prompt: "What is your password ?"
       private: yes
 
-  roles:
-    - { role: delete-guest-virtual-machine, vm_name: "{{ dns_fqdn }}", vm_ip: "{{ dns_ip }}", is_dns_vm: true }
-    - { role: delete-guest-virtual-machine, vm_name: "{{ okd_all_in_one_fqdn }}", vm_ip: "{{ okd_all_in_one_ip }}", is_dns_vm: false }
-    - { role: delete-vlan-network }
+  tasks:
+    - include_role:
+        name: delete-guest-virtual-machine
+      vars:
+        - vm_name: "{{ dns_fqdn }}"
+        - vm_ip: "{{ dns_ip }}"
+        - is_dns_vm: true
+
+    - include_role:
+        name: delete-guest-virtual-machine
+      vars:
+        - vm_name: "{{ okd_all_in_one_fqdn }}"
+        - vm_ip: "{{ okd_all_in_one_ip }}"
+        - is_dns_vm: false
+
+    - include_role:
+        name: delete-vlan-network

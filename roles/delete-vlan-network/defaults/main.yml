@@ -1,4 +1,4 @@
 ---
 # defaults file for delete-vlan-network
-bridge_name: ""
+bridge_name:
 ansible_become: true
