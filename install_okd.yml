@@ -156,4 +156,15 @@
         - memory: 2048
         - vcpus: 1
 
+    - name: create okd all in one master guest virtual machine
+      include_role:
+        name: create-guest-virtual-machine
+      vars:
+        - vm_name: "{{ okd_master_fqdn }}"
+        - vm_mac: "{{ okd_master_mac }}"
+        - vm_ip: "{{ okd_master_ip }}"
+        - vm_fqdn: "{{ okd_master_fqdn }}"
+        - memory: 32768
+        - vcpus: 6
+
 # a la fin ceci doit être accessible https://console.master.okd.local:8443/

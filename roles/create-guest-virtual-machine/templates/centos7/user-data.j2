@@ -120,6 +120,37 @@ runcmd:
   - systemctl enable rpcbind nfs-server
   - systemctl start rpcbind nfs-server
 
+{% elif vm_ip == okd_master_ip %}
+
+########################################################################################################################
+# OKD MASTER init configuration
+########################################################################################################################
+resolv_conf:
+  nameservers: ['{{ dns_ip }}']
+
+# TODO setup {{ ansible_user_id }} to use docker !!!
+# TODO docker registry mirror to {{ container_registry_fqdn }}
+
+packages:
+  - nfs-utils
+  - bind-utils
+  - docker-1.13.1
+
+write_files:
+  - content: |
+      supersede domain-name-servers {{ dns_ip }};
+      timeout 300;
+      retry 60;
+    path: /etc/dhcp/dhclient.conf
+
+runcmd:
+  - systemctl stop network && systemctl start network
+  - systemctl disable cloud-init.service
+  - groupadd docker
+  - usermod -aG docker damien
+  - systemctl enable docker
+  - systemctl start docker
+
 {% elif false %}
 
 ########################################################################################################################

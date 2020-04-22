@@ -5,7 +5,7 @@
 # I do not use the htpasswd authentication as I do not need it yet
   block:
     - name: generate certificats
-      shell: openssl req -newkey rsa:4096 -nodes -sha256 -subj "/C=FR/ST=Paris/L=Paris/O=Organisation/CN={{ dns_fqdn }}" -keyout {{ installer_path }}/domain.key -x509 -days 36500 -out {{ installer_path }}/domain.crt
+      shell: openssl req -newkey rsa:4096 -nodes -sha256 -subj "/C=FR/ST=Paris/L=Paris/O=Organisation/CN={{ container_registry_fqdn }}" -keyout {{ installer_path }}/domain.key -x509 -days 36500 -out {{ installer_path }}/domain.crt
     - name: define certificates related variables
       set_fact:
         domain_crt: "{{ installer_path }}/domain.crt"
