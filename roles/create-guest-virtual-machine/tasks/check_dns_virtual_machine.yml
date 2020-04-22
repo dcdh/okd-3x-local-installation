@@ -1,12 +1,7 @@
 # check dnsmasq service is active
-- name: get {{ vm_name }} dnsmasq service status
-  shell: ssh centos@{{ vm_ip }} 'sudo systemctl is-active dnsmasq'
-  register: is_active
-  until: is_active.rc == 0
+- name: should dnsmasq service be active on {{ vm_name }}
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'sudo systemctl is-active dnsmasq'
+  register: task_result
+  until: task_result.stdout == 'active'
   retries: 120
   delay: 5
-
-- name: assert {{ vm_name }} dnsmasq service is active
-  assert:
-    that:
-      - "'active' == is_active.stdout"

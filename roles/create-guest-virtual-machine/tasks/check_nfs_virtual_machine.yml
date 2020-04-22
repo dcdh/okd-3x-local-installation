@@ -1,20 +1,20 @@
 # check rpcbind service is active
-- name: get {{ vm_name }} rpcbind service status
-  shell: ssh centos@{{ vm_ip }} 'sudo systemctl is-active rpcbind'
-  register: is_active
-  until: is_active.rc == 0
+- name: should rpcbind service be active on {{ vm_name }}
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'sudo systemctl is-active rpcbind'
+  register: task_result
+  until: task_result.stdout == 'active'
   retries: 120
   delay: 5
 
 # check nfs-server service is active
-- name: get {{ vm_name }} nfs-server service status
-  shell: ssh centos@{{ vm_ip }} 'sudo systemctl is-active nfs-server'
-  register: is_active
-  until: is_active.rc == 0
+- name: should nfs-server service be active on {{ vm_name }}
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'sudo systemctl is-active nfs-server'
+  register: task_result
+  until: task_result.stdout == 'active'
   retries: 120
   delay: 5
 
-- name: wait for port 2049
+- name: should port 2049 be opened
   wait_for:
     host: "{{ nfs_fqdn }}"
     port: 2049
