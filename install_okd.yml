@@ -32,11 +32,6 @@
       - { ip: "{{ okd_master_ip }}", fqdn: "{{ okd_master_fqdn }}" }
       - { ip: "{{ okd_master_ip }}", fqdn: "console.{{ okd_master_fqdn }}" }
 
-  vars_prompt:
-    - name: ansible_become_password
-      prompt: "What is your password ?"
-      private: yes
-
   tasks:
     - name: create {{ bridge_name }} vlan network
       include_role:

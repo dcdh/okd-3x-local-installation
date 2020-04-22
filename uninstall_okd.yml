@@ -13,11 +13,6 @@
     okd_all_in_one_ip: "10.0.5.50"
     okd_all_in_one_fqdn: "master.okd.local"
 
-  vars_prompt:
-    - name: ansible_become_password
-      prompt: "What is your password ?"
-      private: yes
-
   tasks:
     - name: delete dns guest virtual machine
       include_role:

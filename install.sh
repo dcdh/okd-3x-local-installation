@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ansible-playbook install_okd.yml
+ansible-playbook install_okd.yml --ask-become-pass
