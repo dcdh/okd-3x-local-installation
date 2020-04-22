@@ -2,5 +2,5 @@
 # defaults file for delete-guest-virtual-machine
 vm_name:
 vm_ip:
-is_dns_vm: false
+dns_ip:
 ansible_become: true

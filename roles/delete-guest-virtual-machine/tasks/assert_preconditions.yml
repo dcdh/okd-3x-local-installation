@@ -11,3 +11,10 @@
       - "vm_ip is defined and vm_ip"
     fail_msg: "vm_ip must be define"
     success_msg: "vm_ip define to {{ vm_ip }}"
+
+- name: assert dns_ip variable is defined
+  assert:
+    that:
+      - "dns_ip is defined and dns_ip"
+    fail_msg: "dns_ip must be define"
+    success_msg: "dns_ip define to {{ dns_ip }}"

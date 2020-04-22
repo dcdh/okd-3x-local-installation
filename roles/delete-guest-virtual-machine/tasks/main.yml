@@ -51,4 +51,4 @@
   become_user: "{{ ansible_user_id }}"
 
 - include_tasks: dns.yml
-  when: is_dns_vm
+  when: vm_ip == dns_ip

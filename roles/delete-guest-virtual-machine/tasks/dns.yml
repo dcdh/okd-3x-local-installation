@@ -10,11 +10,11 @@
 - name: unlock /etc/resolv.conf to avoid to be rewritten at startup
   shell: chattr -i /etc/resolv.conf
 
-- name: remove dns virtual machine ip {{ vm_ip }} entry into /etc/resolv.conf
+- name: remove dns virtual machine ip {{ dns_ip }} entry into /etc/resolv.conf
   lineinfile:
     path: /etc/resolv.conf
     state: absent
-    regexp: '^nameserver {{ vm_ip }}'
+    regexp: '^nameserver {{ dns_ip }}'
     backup: yes
 
 - name: reload NetworkManager service

@@ -20,7 +20,6 @@
       vars:
         - vm_name: "{{ dns_fqdn }}"
         - vm_ip: "{{ dns_ip }}"
-        - is_dns_vm: true
 
     - name: delete container registry guest virtual machine
       include_role:
@@ -28,7 +27,6 @@
       vars:
         - vm_name: "{{ container_registry_fqdn }}"
         - vm_ip: "{{ container_registry_ip }}"
-        - is_dns_vm: false
 
     - name: delete nfs guest virtual machine
       include_role:
@@ -36,7 +34,6 @@
       vars:
         - vm_name: "{{ nfs_fqdn }}"
         - vm_ip: "{{ nfs_ip }}"
-        - is_dns_vm: false
 
     - name: delete okd all in one master guest virtual machine
       include_role:
@@ -44,7 +41,6 @@
       vars:
         - vm_name: "{{ okd_all_in_one_fqdn }}"
         - vm_ip: "{{ okd_all_in_one_ip }}"
-        - is_dns_vm: false
 
     - name: delete {{ bridge_name }} vlan network
       include_role:
