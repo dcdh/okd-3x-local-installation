@@ -1,4 +1,5 @@
-- block:
+- name: should dns guest virtual machine resolved all dns entries
+  block:
     - name: should {{ vm_name }} virtual machine resolved full qualified domain name entries
       include: check_dns_fqdn_vm_resolution.yml
       vars:

@@ -1,0 +1,11 @@
+- name: include centos7 virtual machine variable
+  include_vars: "centos7.yml"
+  when: vm_ip == dns_ip
+
+- name: include fedora_coreos virtual machine variable
+  include_vars: "fedora_coreos.yml"
+  when: vm_ip == container_registry_ip
+
+- name: debug variable inclusion
+  debug:
+    msg: "{{ remote_cloud_image_name }}"

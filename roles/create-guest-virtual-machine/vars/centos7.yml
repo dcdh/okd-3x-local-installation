@@ -1,0 +1,8 @@
+type: "centos7"
+
+boot_init_iso_path: "{{ vm_path }}/boot-init.iso"
+cloud_image_name: "CentOS-7-x86_64-GenericCloud-1907.qcow2"
+
+remote_cloud_image_name: "{{ cloud_image_name }}"
+remote_cloud_image_url: "https://cloud.centos.org/centos/7/images/{{ remote_cloud_image_name }}"
+remote_cloud_image_sha256sum: "520d01c2f2e1ed24cb2f15a4325aa30773930a2961b5484a68cf11b4a415c512"

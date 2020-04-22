@@ -34,6 +34,15 @@
       ignore_errors: yes
       when: vm_name in vms.list_vms
 
+    - name: remove {{ vm_name }} data
+      file:
+        path: "{{item}}"
+        state: absent
+      with_fileglob:
+        - "/tmp/container_registry.*"
+      become: true
+      become_user: root
+
     - name: remove {{ vm_name }} virtual machine host from known_hosts
       lineinfile:
         path: "/home/{{ ansible_user_id }}/.ssh/known_hosts"

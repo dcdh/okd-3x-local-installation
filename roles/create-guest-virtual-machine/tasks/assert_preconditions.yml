@@ -33,6 +33,13 @@
     fail_msg: "vm_fqdn must be define"
     success_msg: "vm_fqdn define to {{ vm_fqdn }}"
 
+- name: assert dns_fqdn variable is defined
+  assert:
+    that:
+      - "dns_fqdn is defined and dns_fqdn"
+    fail_msg: "dns_fqdn must be define"
+    success_msg: "dns_fqdn define to {{ dns_fqdn }}"
+
 - name: assert dns_entries variable is defined
   assert:
     that:

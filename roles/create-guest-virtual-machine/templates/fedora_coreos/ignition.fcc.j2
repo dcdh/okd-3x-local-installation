@@ -1,0 +1,66 @@
+variant: fcos
+version: 1.0.0
+passwd:
+  users:
+    - name: core
+      ssh_authorized_keys:
+        - "{{ lookup('file', ssh_public_key) }}"
+    - name: {{ ansible_user_id }}
+      ssh_authorized_keys:
+        - "{{ lookup('file', ssh_public_key) }}"
+      groups: [ sudo, docker ]
+{% if vm_ip == container_registry_ip %}
+storage:
+  files:
+    - path: /opt/certs/domain.crt
+      overwrite: true
+      contents:
+        inline: |
+          {{ lookup('file', domain_crt) | indent(width=10, indentfirst=False) }}
+      mode: 0644
+    - path: /opt/certs/domain.key
+      overwrite: true
+      contents:
+        inline: |
+          {{ lookup('file', domain_key) | indent(width=10, indentfirst=False) }}
+      mode: 0644
+    - path: /etc/containers/registries.conf
+      overwrite: true
+      contents:
+        inline: |
+          [registries.search]
+          registries = ['docker.io', 'registry.fedoraproject.org', 'registry.access.redhat.com', 'registry.centos.org', 'quay.io']
+
+          [registries.insecure]
+          registries = []
+
+          [registries.block]
+          registries = []
+systemd:
+  units:
+    - name: podman-registry.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Run podman registry
+        After=network-online.target
+        Wants=network-online.target
+
+        [Service]
+        TimeoutStartSec=0
+        ExecStartPre=-/usr/bin/mkdir -p /var/lib/registry
+        ExecStartPre=-/bin/podman pull docker.io/library/registry:2.6
+        ExecStart=/bin/podman run --privileged --name registry -p 443:5000 \
+                    -v /var/lib/registry:/var/lib/registry:z \
+                    -v /opt/certs:/certs:z \
+                    -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
+                    -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
+                    --restart=always registry:2.6
+
+        ExecStop=/bin/podman rm -f registry
+
+        [Install]
+        WantedBy=multi-user.target
+{% elif false %}
+
+{% endif %}

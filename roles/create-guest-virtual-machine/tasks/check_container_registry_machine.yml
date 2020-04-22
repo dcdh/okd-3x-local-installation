@@ -1,0 +1,13 @@
+- name: wait {{ vm_name }} container registry service is active
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'sudo systemctl is-active podman-registry.service'
+  register: task_result
+  until: task_result.stdout == 'active'
+  retries: 120
+  delay: 5
+
+- name: wait for port 443
+  wait_for:
+    host: "{{ container_registry_fqdn }}"
+    port: 443
+    state: drained
+    delay: 2

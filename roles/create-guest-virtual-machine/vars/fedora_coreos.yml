@@ -1,0 +1,10 @@
+type: "fedora_coreos"
+
+# To get cloud image
+# https://builds.coreos.fedoraproject.org/browser?stream=testing-devel
+
+cloud_image_name: "fedora-coreos-31.20200406.20.0-qemu.x86_64.qcow2"
+
+remote_cloud_image_name: "fedora-coreos-31.20200406.20.0-qemu.x86_64.qcow2.xz"
+remote_cloud_image_url: "https://builds.coreos.fedoraproject.org/prod/streams/testing-devel/builds/31.20200406.20.0/x86_64/{{ remote_cloud_image_name }}"
+remote_cloud_image_sha256sum: "4594182133375ce0cca180ef42506492da79adff79db655a4cc5fc94fb708f92"

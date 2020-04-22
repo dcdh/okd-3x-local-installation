@@ -1,0 +1,41 @@
+- name: create container registry relative stuffs
+# We will not used the last version 2 of docker registry to avoid this bug: https://github.com/docker/distribution-library-image/issues/89
+# Instead we fix it to version 2.6
+# https://www.openshift.com/blog/openshift-4-2-disconnected-install
+# I do not use the htpasswd authentication as I do not need it yet
+  block:
+    - name: generate certificats
+      shell: openssl req -newkey rsa:4096 -nodes -sha256 -subj "/C=FR/ST=Paris/L=Paris/O=Organisation/CN={{ dns_fqdn }}" -keyout {{ installer_path }}/domain.key -x509 -days 36500 -out {{ installer_path }}/domain.crt
+    - name: define certificates related variables
+      set_fact:
+        domain_crt: "{{ installer_path }}/domain.crt"
+        domain_key: "{{ installer_path }}/domain.key"
+  when: vm_ip == container_registry_ip
+
+- name: define {{ vm_name }} fcc file
+  block:
+    - template:
+        dest: /tmp/container_registry.fcc
+        src: fedora_coreos/ignition.fcc.j2
+        mode: u=rw,g=r,o=r
+        owner: root
+        group: root
+    - name: generate container_registry ignition file
+      shell: /bin/podman run -i --rm quay.io/coreos/fcct:release --pretty --strict < /tmp/container_registry.fcc > /tmp/container_registry.ign
+  become: true
+  become_user: root
+
+- name: define {{ vm_name }} virtual machine
+  virt:
+    command: define
+    name: "{{ vm_name }}"
+    xml: "{{ lookup('template', 'vm.xml.j2') }}"
+    uri: "qemu:///session"
+  vars:
+    name: "{{ vm_name }}"
+    memory: "{{ memory }}"
+    vcpus: "{{ vcpus }}"
+    disk_file: "{{ vm_path }}/{{ cloud_image_name }}"
+    vm_mac: "{{ vm_mac }}"
+    vm_bridge: "{{ bridge_name }}"
+    fw_cfg: "name=opt/com.coreos/config,file=/tmp/container_registry.ign"

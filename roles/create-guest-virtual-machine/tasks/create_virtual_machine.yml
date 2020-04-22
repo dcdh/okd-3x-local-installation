@@ -19,14 +19,18 @@
     - name: check if cloud image is present
       stat:
         path: "{{ images_path }}/{{ cloud_image_name }}"
-      register: cloud_image
+      register: has_cloud_image
 
     - name: download cloud image
       get_url:
-        url: "{{ cloud_image_url }}"
+        url: "{{ remote_cloud_image_url }}"
         dest: "{{ images_path }}"
-        sha256sum: "{{ sha256sum }}"
-      when: cloud_image.stat.exists == False
+        sha256sum: "{{ remote_cloud_image_sha256sum }}"
+      when: has_cloud_image.stat.exists == False
+
+    - name: unarchive cloud image
+      shell: xz -v -d {{ images_path }}/{{ remote_cloud_image_name }}
+      when: cloud_image_name is match("^.*\.xz$")
 
     - name: copy cloud image from images to {{ vm_name }} virtual machine
       copy:
@@ -36,36 +40,13 @@
         group: "{{ ansible_user_id }}"
         force: no
 
-    - name: create meta-data file
-      copy:
-        dest: "{{ vm_path }}/meta-data"
-        content: |
-          instance-id: {{ vm_name }}
-          local-hostname: {{ vm_name }}
+    - name: define dns virtual machine
+      include_tasks: define_centos7_virtual_machine.yml
+      when: type == 'centos7'
 
-    - name: create user-data file
-      template:
-        dest: "{{ vm_path }}/user-data"
-        src: user-data.j2
-
-    - name: create boot init iso
-      shell:
-        cmd: genisoimage -output {{ boot_init_iso_path }} -volid cidata -joliet -r {{ vm_path }}/user-data {{ vm_path }}/meta-data
-
-    - name: define {{ vm_name }} virtual machine
-      virt:
-        command: define
-        name: "{{ vm_name }}"
-        xml: "{{ lookup('template', 'vm.xml.j2') }}"
-        uri: "qemu:///session"
-      vars:
-        name: "{{ vm_name }}"
-        memory: "{{ memory }}"
-        vcpus: "{{ vcpus }}"
-        disk_file: "{{ vm_path }}/{{ cloud_image_name }}"
-        boot_init_iso: "{{ boot_init_iso_path }}"
-        vm_mac: "{{ vm_mac }}"
-        vm_bridge: "{{ bridge_name }}"
+    - name: define container registry virtual machine
+      include_tasks: define_fedora_core_os_virtual_machine.yml
+      when: type == 'fedora_coreos'
 
     - name: start {{ vm_name }} vm
       virt:
@@ -96,13 +77,28 @@
       until: task_result.rc == 0
       retries: 120
       delay: 5
+      when: type == 'centos7'
+
+    - name: wait until unprivilegied {{ ansible_user_id }} can loggin in using ssh
+# fatal: [localhost]: FAILED! => {"changed": true, "cmd": "ssh core@10.0.5.59 'dig test.apps.sandbox.okd.local +short'", "delta": "0:00:00.102321", "end": "2020-04-11 19:56:50.886226", "msg": "non-zero return code", "rc": 255, "start": "2020-04-11 19:56:50.783905", "stderr": "\"System is booting up. Unprivileged users are not permitted to log in yet. Please come back later. For technical details, see pam_nologin(8).\"\nAuthentication failed.", "stderr_lines": ["\"System is booting up. Unprivileged users are not permitted to log in yet. Please come back later. For technical details, see pam_nologin(8).\"", "Authentication failed."], "stdout": "", "stdout_lines": []}
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'date'
+      register: task_result
+      until: task_result.rc == 0
+      retries: 120
+      delay: 5
+      when: type == 'fedora_coreos'
 
     - name: remove boot-init.iso from {{ vm_name }} vm
       shell: virsh change-media {{ vm_name }} --path {{ boot_init_iso_path }} --eject --config
+      when: type == 'centos7'
 
     - name: check dns virtual machine
       include_tasks: check_dns_virtual_machine.yml
       when: vm_ip == dns_ip
+
+    - name: check container registry virtual machine
+      include_tasks: check_container_registry_machine.yml
+      when: vm_ip == container_registry_ip
 
   become_user: "{{ ansible_user_id }}"
   when: vm_name not in vms.list_vms

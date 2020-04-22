@@ -1,0 +1,30 @@
+- name: create meta-data file
+  copy:
+    dest: "{{ vm_path }}/meta-data"
+    content: |
+      instance-id: {{ vm_name }}
+      local-hostname: {{ vm_name }}
+
+- name: create user-data file
+  template:
+    dest: "{{ vm_path }}/user-data"
+    src: centos7/user-data.j2
+
+- name: create boot init iso
+  shell:
+    cmd: genisoimage -output {{ boot_init_iso_path }} -volid cidata -joliet -r {{ vm_path }}/user-data {{ vm_path }}/meta-data
+
+- name: define {{ vm_name }} virtual machine
+  virt:
+    command: define
+    name: "{{ vm_name }}"
+    xml: "{{ lookup('template', 'vm.xml.j2') }}"
+    uri: "qemu:///session"
+  vars:
+    name: "{{ vm_name }}"
+    memory: "{{ memory }}"
+    vcpus: "{{ vcpus }}"
+    disk_file: "{{ vm_path }}/{{ cloud_image_name }}"
+    boot_init_iso: "{{ boot_init_iso_path }}"
+    vm_mac: "{{ vm_mac }}"
+    vm_bridge: "{{ bridge_name }}"

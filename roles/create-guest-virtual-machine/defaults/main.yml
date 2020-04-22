@@ -5,16 +5,14 @@ vm_name:
 vm_mac:
 vm_ip:
 vm_fqdn:
+dns_fqdn:
 dns_entries:
 domain:
 okd_master_ip:
 
+installer_path: "/home/{{ ansible_user_id }}/.okd"
 ssh_public_key: "/home/{{ ansible_user_id }}/.ssh/id_rsa.pub"
 images_path: "/home/{{ ansible_user_id }}/.okd/images"
 vm_path: "/home/{{ ansible_user_id }}/.okd/vms/{{ vm_name }}"
-boot_init_iso_path: "{{ vm_path }}/boot-init.iso"
-cloud_image_name: "CentOS-7-x86_64-GenericCloud-1907.qcow2"
-cloud_image_url: "https://cloud.centos.org/centos/7/images/{{ cloud_image_name }}"
-sha256sum: "520d01c2f2e1ed24cb2f15a4325aa30773930a2961b5484a68cf11b4a415c512"
 
 ansible_become: true

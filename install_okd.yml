@@ -6,19 +6,24 @@
     bridge_name: "virbr5"
     bridge_ip: "10.0.5.1"
     dns_ip: "10.0.5.10"
-    dns_fqdn: "dns.local"
     dns_mac: "52:54:00:00:05:10"
+    dns_fqdn: "dns.local"
     okd_master_ip: "10.0.5.50"
     okd_master_mac: "52:54:00:00:05:50"
     domain: "master.okd.local"
+    container_registry_ip: "10.0.5.11"
+    container_registry_mac: "52:54:00:00:05:11"
+    container_registry_fqdn: "container-registry.okd.local"
 
     # TODO ne concerne que la creation du vlan network
     guests_vms_networks:
       - { mac: "{{ dns_mac }}", ip: "{{ dns_ip }}" }
+      - { mac: "{{ container_registry_mac }}", ip: "{{ container_registry_ip }}" }
       - { mac: "{{ okd_master_mac }}", ip: "{{ okd_master_ip }}" }
-    # TODO ne concerne que la creation de la virtual machine dns
+        # TODO ne concerne que la creation de la virtual machine dns
     dns_entries:
       - { ip: "{{ dns_ip }}", fqdn: "{{ dns_fqdn }}" }
+      - { ip: "{{ container_registry_ip }}", fqdn: "{{ container_registry_fqdn }}" }
       - { ip: "{{ okd_master_ip }}", fqdn: "{{ domain }}" }
       - { ip: "{{ okd_master_ip }}", fqdn: "console.{{ domain }}" }
 
@@ -28,14 +33,17 @@
       private: yes
 
   tasks:
-    - include_role:
+    - name: create {{ bridge_name }} vlan network
+      include_role:
         name: create-vlan-network
       vars:
         - bridge_mac: "52:54:00:00:05:01"
         - bridge_netmask: "255.255.255.0"
         - dhcp_range_start: "10.0.5.10"
         - dhcp_range_end: "10.0.5.254"
-    - include_role:
+
+    - name: create dns guest virtual machine
+      include_role:
         name: create-guest-virtual-machine
       vars:
         - vm_name: "{{ dns_fqdn }}"
@@ -44,5 +52,97 @@
         - vm_fqdn: "{{ dns_fqdn }}"
         - memory: 1024
         - vcpus: 1
+
+    - name: create container registry guest virtual machine
+      include_role:
+        name: create-guest-virtual-machine
+      vars:
+        - vm_name: "{{ container_registry_fqdn }}"
+        - vm_mac: "{{ container_registry_mac }}"
+        - vm_ip: "{{ container_registry_ip }}"
+        - vm_fqdn: "{{ container_registry_fqdn }}"
+        - memory: 4096
+        - vcpus: 1
+
+    - name: pull images to container registry.
+      shell: ssh {{ ansible_user_id }}@{{ container_registry_ip }} 'skopeo copy docker://{{ item.imageId }} docker://{{ container_registry_fqdn }}/{{ item.registryMirrorImage }} --dest-tls-verify=false'
+      register: task_result
+      until: task_result.rc == 0
+      retries: 100
+      delay: 1
+      loop:
+        - {imageId: 'docker.io/openshift/oauth-proxy:v1.1.0',                         registryMirrorImage: 'openshift/oauth-proxy:v1.1.0'}
+        - {imageId: 'docker.io/openshift/origin-cluster-monitoring-operator:v3.11',   registryMirrorImage: 'openshift/origin-cluster-monitoring-operator:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-cluster-monitoring-operator:v3.11.0', registryMirrorImage: 'openshift/origin-cluster-monitoring-operator:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-console:v3.11',                       registryMirrorImage: 'openshift/origin-console:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-console:v3.11.0',                     registryMirrorImage: 'openshift/origin-console:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-control-plane:v3.11',                 registryMirrorImage: 'openshift/origin-control-plane:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-control-plane:v3.11.0',               registryMirrorImage: 'openshift/origin-control-plane:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-deployer:v3.11',                      registryMirrorImage: 'openshift/origin-deployer:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-deployer:v3.11.0',                    registryMirrorImage: 'openshift/origin-deployer:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-docker-registry:v3.11',               registryMirrorImage: 'openshift/origin-docker-registry:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-docker-registry:v3.11.0',             registryMirrorImage: 'openshift/origin-docker-registry:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-haproxy-router:v3.11',                registryMirrorImage: 'openshift/origin-haproxy-router:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-haproxy-router:v3.11.0',              registryMirrorImage: 'openshift/origin-haproxy-router:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-logging-fluentd:v3.11',               registryMirrorImage: 'openshift/origin-logging-fluentd:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-logging-fluentd:v3.11.0',             registryMirrorImage: 'openshift/origin-logging-fluentd:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-logging-kibana5:v3.11',               registryMirrorImage: 'openshift/origin-logging-kibana5:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-logging-kibana5:v3.11.0',             registryMirrorImage: 'openshift/origin-logging-kibana5:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-logging-elasticsearch5:v3.11',        registryMirrorImage: 'openshift/origin-logging-elasticsearch5:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-logging-elasticsearch5:v3.11.0',      registryMirrorImage: 'openshift/origin-logging-elasticsearch5:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-metrics-server:v3.11',                registryMirrorImage: 'openshift/origin-metrics-server:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-metrics-server:v3.11.0',              registryMirrorImage: 'openshift/origin-metrics-server:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-metrics-heapster:v3.11',              registryMirrorImage: 'openshift/origin-metrics-heapster:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-metrics-heapster:v3.11.0',            registryMirrorImage: 'openshift/origin-metrics-heapster:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-metrics-hawkular-metrics:v3.11',      registryMirrorImage: 'openshift/origin-metrics-hawkular-metrics:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-metrics-hawkular-metrics:v3.11.0',    registryMirrorImage: 'openshift/origin-metrics-hawkular-metrics:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-metrics-schema-installer:v3.11',      registryMirrorImage: 'openshift/origin-metrics-schema-installer:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-metrics-schema-installer:v3.11.0',    registryMirrorImage: 'openshift/origin-metrics-schema-installer:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-metrics-cassandra:v3.11',             registryMirrorImage: 'openshift/origin-metrics-cassandra:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-metrics-cassandra:v3.11.0',           registryMirrorImage: 'openshift/origin-metrics-cassandra:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-node:v3.11',                          registryMirrorImage: 'openshift/origin-node:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-node:v3.11.0',                        registryMirrorImage: 'openshift/origin-node:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-pod:v3.11',                           registryMirrorImage: 'openshift/origin-pod:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-pod:v3.11.0',                         registryMirrorImage: 'openshift/origin-pod:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-service-catalog:v3.11',               registryMirrorImage: 'openshift/origin-service-catalog:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-service-catalog:v3.11.0',             registryMirrorImage: 'openshift/origin-service-catalog:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-template-service-broker:v3.11',       registryMirrorImage: 'openshift/origin-template-service-broker:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-template-service-broker:v3.11.0',     registryMirrorImage: 'openshift/origin-template-service-broker:v3.11.0'}
+        - {imageId: 'docker.io/openshift/origin-web-console:v3.11',                   registryMirrorImage: 'openshift/origin-web-console:v3.11'}
+        - {imageId: 'docker.io/openshift/origin-web-console:v3.11.0',                 registryMirrorImage: 'openshift/origin-web-console:v3.11.0'}
+        - {imageId: 'docker.io/openshift/prometheus-alertmanager:v0.15.2',            registryMirrorImage: 'openshift/prometheus-alertmanager:v0.15.2'}
+        - {imageId: 'docker.io/openshift/prometheus-node-exporter:v0.16.0',           registryMirrorImage: 'openshift/prometheus-node-exporter:v0.16.0'}
+        - {imageId: 'docker.io/openshift/prometheus:v2.3.2',                          registryMirrorImage: 'openshift/prometheus:v2.3.2'}
+        - {imageId: 'docker.io/grafana/grafana:5.2.1',                                registryMirrorImage: 'grafana/grafana:5.2.1'}
+        - {imageId: 'docker.io/cockpit/kubernetes:latest',                            registryMirrorImage: 'cockpit/kubernetes:latest'}
+        - {imageId: 'quay.io/coreos/cluster-monitoring-operator:v0.1.1',              registryMirrorImage: 'coreos/cluster-monitoring-operator:v0.1.1'}
+        - {imageId: 'quay.io/coreos/configmap-reload:v0.0.1',                         registryMirrorImage: 'coreos/configmap-reload:v0.0.1'}
+        - {imageId: 'quay.io/coreos/etcd:v3.2.22',                                    registryMirrorImage: 'coreos/etcd:v3.2.22'}
+        - {imageId: 'quay.io/coreos/kube-rbac-proxy:v0.3.1',                          registryMirrorImage: 'coreos/kube-rbac-proxy:v0.3.1'}
+        - {imageId: 'quay.io/coreos/kube-state-metrics:v1.3.1',                       registryMirrorImage: 'coreos/kube-state-metrics:v1.3.1'}
+        - {imageId: 'quay.io/coreos/prometheus-config-reloader:v0.23.2',              registryMirrorImage: 'coreos/prometheus-config-reloader:v0.23.2'}
+        - {imageId: 'quay.io/coreos/prometheus-operator:v0.23.2',                     registryMirrorImage: 'coreos/prometheus-operator:v0.23.2'}
+        - {imageId: 'docker.io/openshift/jenkins-agent-maven-35-centos7:v3.11',       registryMirrorImage: 'openshift/jenkins-agent-maven-35-centos7:v3.11'}
+        - {imageId: 'docker.io/openshift/jenkins-agent-nodejs-8-centos7:v3.11',       registryMirrorImage: 'openshift/jenkins-agent-nodejs-8-centos7:v3.11'}
+        - {imageId: 'docker.io/openshift/jenkins-slave-base-centos7:v3.11',           registryMirrorImage: 'openshift/jenkins-slave-base-centos7:v3.11'}
+        - {imageId: 'docker.io/openshift/jenkins-slave-maven-centos7:v3.11',          registryMirrorImage: 'openshift/jenkins-slave-maven-centos7:v3.11'}
+        - {imageId: 'docker.io/openshift/jenkins-slave-nodejs-centos7:v3.11',         registryMirrorImage: 'openshift/jenkins-slave-nodejs-centos7:v3.11'}
+        - {imageId: 'docker.io/openshift/jenkins-2-centos7:v3.11',                    registryMirrorImage: 'openshift/jenkins-2-centos7:v3.11'}
+
+# TODO should loop using all images pull
+#    - name: should repository "openshift/oauth-proxy" exists
+#      block:
+#        - name: get list of repositories
+#          shell: curl -k https://{{ container_registry_fqdn }}:443/v2/_catalog
+#          register: repositories
+#        - debug:
+#            msg: "{{ repositories }}"
+#        - name: assert repositories contains "openshift/okd-content"
+#          assert:
+#            that:
+#              - "'openshift/oauth-proxy' in (repositories.stdout | from_json).repositories"
+
+# ssh damien@10.0.5.11 'skopeo copy docker://docker.io/openshift/origin-cluster-monitoring-operator:v3.11 docker://container-registry.okd.local/openshift/origin-cluster-monitoring-operator:v3.11  --dest-tls-verify=false'
+# TODO tester le container registry en pullant une image depuis docker.io et quay.io
 
 # a la fin ceci doit être accessible https://console.master.okd.local:8443/
