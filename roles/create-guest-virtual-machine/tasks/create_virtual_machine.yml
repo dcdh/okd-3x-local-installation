@@ -104,6 +104,10 @@
       include_tasks: check_nfs_virtual_machine.yml
       when: vm_ip == nfs_ip
 
+    - name: check okd master  virtual machine
+      include_tasks: check_okd_master_virtual_machine.yml
+      when: vm_ip == okd_master_ip
+
   become_user: "{{ ansible_user_id }}"
   when: vm_name not in vms.list_vms
 

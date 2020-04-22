@@ -124,6 +124,8 @@ runcmd:
 
 ########################################################################################################################
 # OKD MASTER init configuration
+# docker configuration howto:
+# https://access.redhat.com/documentation/en-us/openshift_container_platform/3.11/html/day_two_operations_guide/day_two_docker_tasks
 ########################################################################################################################
 resolv_conf:
   nameservers: ['{{ dns_ip }}']
@@ -142,12 +144,18 @@ write_files:
       timeout 300;
       retry 60;
     path: /etc/dhcp/dhclient.conf
+  - content: |
+      {{ lookup('file', domain_crt) | indent(width=6, indentfirst=False) }}
+    owner: root:root
+    path: /etc/pki/ca-trust/source/anchors/{{ container_registry_fqdn }}.crt
+    permissions: '0644'
 
 runcmd:
   - systemctl stop network && systemctl start network
   - systemctl disable cloud-init.service
   - groupadd docker
   - usermod -aG docker damien
+  - update-ca-trust extract
   - systemctl enable docker
   - systemctl start docker
 

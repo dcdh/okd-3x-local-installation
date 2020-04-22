@@ -1,0 +1,31 @@
+# check docker service is active
+- name: should docker service be active on {{ vm_name }}
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'sudo systemctl is-active docker'
+  register: task_result
+  until: task_result.stdout == 'active'
+  retries: 120
+  delay: 5
+
+# check {{ ansible_user_id }} can execute docker cmd
+- name: should {{ ansible_user_id }} can execute docker commands
+  block:
+    - name: list all containers by {{ ansible_user_id }}
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'docker ps'
+      register: docker_ps
+
+    - name: assert {{ ansible_user_id }} can list all containers
+      assert:
+        that:
+          - "docker_ps.rc == 0"
+
+# check certificate is installed
+- name: should container registry certificate be installed
+  block:
+    - name: verify certificate
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'openssl verify /etc/pki/ca-trust/source/anchors/container-registry.okd.local.crt'
+      register: verification
+
+    - name: assert certificate is ok
+      assert:
+        that:
+          - "'/etc/pki/ca-trust/source/anchors/container-registry.okd.local.crt: OK' == verification.stdout"

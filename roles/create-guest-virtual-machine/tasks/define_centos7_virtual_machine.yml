@@ -5,6 +5,11 @@
       instance-id: {{ vm_name }}
       local-hostname: {{ vm_name }}
 
+- name: get container registry relative stuffs
+  set_fact:
+    domain_crt: "{{ installer_path }}/domain.crt"
+  when: vm_ip == okd_master_ip
+
 - name: create user-data file
   template:
     dest: "{{ vm_path }}/user-data"
