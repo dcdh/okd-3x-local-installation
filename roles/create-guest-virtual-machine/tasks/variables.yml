@@ -1,6 +1,6 @@
 - name: include centos7 virtual machine variable
   include_vars: "centos7.yml"
-  when: vm_ip == dns_ip
+  when: vm_ip == dns_ip or vm_ip == nfs_ip
 
 - name: include fedora_coreos virtual machine variable
   include_vars: "fedora_coreos.yml"

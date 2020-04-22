@@ -7,7 +7,7 @@ vm_ip:
 vm_fqdn:
 dns_fqdn:
 dns_entries:
-domain:
+okd_master_fqdn:
 okd_master_ip:
 
 installer_path: "/home/{{ ansible_user_id }}/.okd"

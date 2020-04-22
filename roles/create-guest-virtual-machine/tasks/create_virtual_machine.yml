@@ -100,6 +100,10 @@
       include_tasks: check_container_registry_machine.yml
       when: vm_ip == container_registry_ip
 
+    - name: check nfs virtual machine
+      include_tasks: check_nfs_virtual_machine.yml
+      when: vm_ip == nfs_ip
+
   become_user: "{{ ansible_user_id }}"
   when: vm_name not in vms.list_vms
 

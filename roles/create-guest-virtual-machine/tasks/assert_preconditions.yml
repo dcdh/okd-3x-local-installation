@@ -47,12 +47,12 @@
     fail_msg: "dns_entries must be define"
     success_msg: "dns_entries define to {{ dns_entries }}"
 
-- name: assert domain variable is defined
+- name: assert okd_master_fqdn variable is defined
   assert:
     that:
-      - "domain is defined and domain"
-    fail_msg: "domain must be define"
-    success_msg: "domain define to {{ domain }}"
+      - "okd_master_fqdn is defined and okd_master_fqdn"
+    fail_msg: "okd_master_fqdn must be define"
+    success_msg: "okd_master_fqdn define to {{ okd_master_fqdn }}"
 
 - name: assert okd_master_ip variable is defined
   assert:

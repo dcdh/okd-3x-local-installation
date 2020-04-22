@@ -6,6 +6,8 @@
     bridge_name: "virbr5"
     dns_ip: "10.0.5.10"
     dns_fqdn: "dns.local"
+    nfs_ip: "10.0.5.12"
+    nfs_fqdn: "nfs.local"
     container_registry_ip: "10.0.5.11"
     container_registry_fqdn: "container-registry.okd.local"
     okd_all_in_one_ip: "10.0.5.50"
@@ -31,6 +33,14 @@
       vars:
         - vm_name: "{{ container_registry_fqdn }}"
         - vm_ip: "{{ container_registry_ip }}"
+        - is_dns_vm: false
+
+    - name: delete nfs guest virtual machine
+      include_role:
+        name: delete-guest-virtual-machine
+      vars:
+        - vm_name: "{{ nfs_fqdn }}"
+        - vm_ip: "{{ nfs_ip }}"
         - is_dns_vm: false
 
     - name: delete okd all in one master guest virtual machine

@@ -49,7 +49,7 @@ packages:
 
 write_files:
   - content: |
-      address=/{{ domain }}/{{ okd_master_ip }}
+      address=/{{ okd_master_fqdn }}/{{ okd_master_ip }}
       no-hosts
       addn-hosts=/etc/dnsmasq.okd.addnhosts
       conf-dir=/etc/dnsmasq.d,.rpmnew,.rpmsave,.rpmorig
@@ -82,6 +82,36 @@ runcmd:
   - /bin/cp /run/myconf/dnsmasq.okd.addnhosts /etc/dnsmasq.okd.addnhosts
   - systemctl enable dnsmasq
   - systemctl start dnsmasq
+
+{% elif vm_ip == nfs_ip %}
+
+########################################################################################################################
+# NFS init configuration
+########################################################################################################################
+
+packages:
+  - nfs-utils
+  - bind-utils
+
+write_files:
+  - content: |
+      {{ lookup('template', 'nfs/etc/idmapd.conf') | indent(width=6, indentfirst=False) }}
+    owner: root:root
+    path: /etc/idmapd.conf
+    permissions: '0644'
+  - content: |
+      {{ lookup('template', 'nfs/etc/exports') | indent(width=6, indentfirst=False) }}
+    owner: root:root
+    path: /etc/exports
+    permissions: '0644'
+
+# Remove cloud-init when finished with it
+runcmd:
+  - /usr/bin/mkdir /data
+  - systemctl stop network && systemctl start network
+  - systemctl disable cloud-init.service
+  - systemctl enable rpcbind nfs-server
+  - systemctl start rpcbind nfs-server
 
 {% elif false %}
 

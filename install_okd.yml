@@ -8,9 +8,12 @@
     dns_ip: "10.0.5.10"
     dns_mac: "52:54:00:00:05:10"
     dns_fqdn: "dns.local"
+    nfs_ip: "10.0.5.12"
+    nfs_mac: "52:54:00:00:05:12"
+    nfs_fqdn: "nfs.local"
     okd_master_ip: "10.0.5.50"
     okd_master_mac: "52:54:00:00:05:50"
-    domain: "master.okd.local"
+    okd_master_fqdn: "master.okd.local"
     container_registry_ip: "10.0.5.11"
     container_registry_mac: "52:54:00:00:05:11"
     container_registry_fqdn: "container-registry.okd.local"
@@ -19,13 +22,15 @@
     guests_vms_networks:
       - { mac: "{{ dns_mac }}", ip: "{{ dns_ip }}" }
       - { mac: "{{ container_registry_mac }}", ip: "{{ container_registry_ip }}" }
+      - { mac: "{{ nfs_mac }}", ip: "{{ nfs_ip }}"}
       - { mac: "{{ okd_master_mac }}", ip: "{{ okd_master_ip }}" }
         # TODO ne concerne que la creation de la virtual machine dns
     dns_entries:
       - { ip: "{{ dns_ip }}", fqdn: "{{ dns_fqdn }}" }
       - { ip: "{{ container_registry_ip }}", fqdn: "{{ container_registry_fqdn }}" }
-      - { ip: "{{ okd_master_ip }}", fqdn: "{{ domain }}" }
-      - { ip: "{{ okd_master_ip }}", fqdn: "console.{{ domain }}" }
+      - { ip: "{{ nfs_ip }}", fqdn: "{{ nfs_fqdn }}" }
+      - { ip: "{{ okd_master_ip }}", fqdn: "{{ okd_master_fqdn }}" }
+      - { ip: "{{ okd_master_ip }}", fqdn: "console.{{ okd_master_fqdn }}" }
 
   vars_prompt:
     - name: ansible_become_password
@@ -144,5 +149,16 @@
 
 # ssh damien@10.0.5.11 'skopeo copy docker://docker.io/openshift/origin-cluster-monitoring-operator:v3.11 docker://container-registry.okd.local/openshift/origin-cluster-monitoring-operator:v3.11  --dest-tls-verify=false'
 # TODO tester le container registry en pullant une image depuis docker.io et quay.io
+
+    - name: create nfs guest virtual machine
+      include_role:
+        name: create-guest-virtual-machine
+      vars:
+        - vm_name: "{{ nfs_fqdn }}"
+        - vm_mac: "{{ nfs_mac }}"
+        - vm_ip: "{{ nfs_ip }}"
+        - vm_fqdn: "{{ nfs_fqdn }}"
+        - memory: 2048
+        - vcpus: 1
 
 # a la fin ceci doit être accessible https://console.master.okd.local:8443/

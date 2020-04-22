@@ -1,0 +1,22 @@
+# check rpcbind service is active
+- name: get {{ vm_name }} rpcbind service status
+  shell: ssh centos@{{ vm_ip }} 'sudo systemctl is-active rpcbind'
+  register: is_active
+  until: is_active.rc == 0
+  retries: 120
+  delay: 5
+
+# check nfs-server service is active
+- name: get {{ vm_name }} nfs-server service status
+  shell: ssh centos@{{ vm_ip }} 'sudo systemctl is-active nfs-server'
+  register: is_active
+  until: is_active.rc == 0
+  retries: 120
+  delay: 5
+
+- name: wait for port 2049
+  wait_for:
+    host: "{{ nfs_fqdn }}"
+    port: 2049
+    state: drained
+    delay: 2
