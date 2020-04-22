@@ -10,8 +10,8 @@
     nfs_fqdn: "nfs.local"
     container_registry_ip: "10.0.5.11"
     container_registry_fqdn: "container-registry.okd.local"
-    okd_all_in_one_ip: "10.0.5.50"
-    okd_all_in_one_fqdn: "master.okd.local"
+    okd_master_ip: "10.0.5.50"
+    okd_master_fqdn: "master.okd.local"
 
   tasks:
     - name: delete dns guest virtual machine
@@ -39,8 +39,8 @@
       include_role:
         name: delete-guest-virtual-machine
       vars:
-        - vm_name: "{{ okd_all_in_one_fqdn }}"
-        - vm_ip: "{{ okd_all_in_one_ip }}"
+        - vm_name: "{{ okd_master_fqdn }}"
+        - vm_ip: "{{ okd_master_ip }}"
 
     - name: delete {{ bridge_name }} vlan network
       include_role:
