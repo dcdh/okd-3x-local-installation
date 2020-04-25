@@ -162,6 +162,10 @@ runcmd:
   - update-ca-trust extract
   - systemctl enable docker
   - systemctl start docker
+  - mkdir /data
+  - chmod 777 /data
+  - mount nfs.local:/data /data
+  - echo "nfs.local:/data  /data   nfs      rw,sync,hard,intr  0     0" >> /etc/fstab
 
 {% elif false %}
 

@@ -115,6 +115,10 @@
       include_tasks: check_okd_master_virtual_machine.yml
       when: vm_ip == okd_master_ip
 
+    - name: check nfs client virtual machine
+      include_tasks: check_nfs_client_virtual_machine.yml
+      when: vm_ip == okd_master_ip
+
     - name: handle okd images in target virtual machine
       include_tasks: handle_okd_images_in_target_virtual_machine.yml
       loop: "{{ okd_images }}"

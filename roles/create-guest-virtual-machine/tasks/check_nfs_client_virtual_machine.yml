@@ -1,0 +1,35 @@
+- name: delete hello file from nfs virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ nfs_ip }} 'rm -rf /data/hello'
+
+- name: assert hello file does not exists from nfs client virtual machine
+  block:
+    - name: get hello file
+      stat:
+        path: /data/hello
+      register: has_hello_file
+
+    - name: assert hello file does not exists
+      assert:
+        that:
+          - "has_hello_file.stat.exists == False"
+        fail_msg: "hello file must not exists"
+        success_msg: "hello file does not exists"
+
+- name: create hello file from nfs client virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'touch /data/hello'
+
+- name: assert hello file exists from nfs client virtual machine
+  block:
+    - name: test if hello file exists
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} '[ -f /data/hello ] && echo "exist" || echo "does not exist"'
+      register: has_hello_file
+
+    - name: assert hello file exists
+      assert:
+        that:
+          - "has_hello_file.rc == 0 and has_hello_file.stdout == 'exist'"
+        fail_msg: "hello file must exists"
+        success_msg: "hello file exists"
+
+- name: clean up file
+  shell: ssh {{ ansible_user_id }}@{{ nfs_ip }} 'rm -rf /data/hello'
