@@ -40,6 +40,9 @@
         group: "{{ ansible_user_id }}"
         force: no
 
+    - name: Resize image to add 25G more space. At least 7Go needed for /sysroot
+      shell: qemu-img resize {{ vm_path }}/{{ cloud_image_name }} 25G
+
     - name: define dns virtual machine
       include_tasks: define_centos7_virtual_machine.yml
       when: type == 'centos7'
