@@ -11,3 +11,6 @@
     port: 443
     state: drained
     delay: 2
+  until: task_result.rc == 0
+  retries: 100
+  delay: 1

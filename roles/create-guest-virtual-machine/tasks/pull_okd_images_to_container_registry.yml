@@ -1,0 +1,7 @@
+- name: pull okd images to container registry
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'skopeo copy docker://{{ item }} docker://{{ container_registry_fqdn }}/{{ item }} --dest-tls-verify=false'
+  register: task_result
+  until: task_result.rc == 0
+  retries: 100
+  delay: 1
+  loop: "{{ okd_images }}"

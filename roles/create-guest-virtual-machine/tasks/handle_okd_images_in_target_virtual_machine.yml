@@ -1,0 +1,40 @@
+# - depuis host
+# ssh damien@container-registry.okd.local 'skopeo copy docker://docker.io/openshift/origin-cluster-monitoring-operator:v3.11 docker://container-registry.okd.local/docker.io/openshift/origin-cluster-monitoring-operator:v3.11 --dest-tls-verify=false'
+# ssh damien@container-registry.okd.local 'skopeo copy docker://quay.io/coreos/cluster-monitoring-operator:v0.1.1 docker://container-registry.okd.local/quay.io/coreos/cluster-monitoring-operator:v0.1.1 --dest-tls-verify=false'
+#
+# depuis master.okd.local
+# transfer all images from container-registry and next tag them
+# docker pull container-registry.okd.local/docker.io/openshift/origin-cluster-monitoring-operator:v3.11
+# docker pull container-registry.okd.local/quay.io/coreos/cluster-monitoring-operator:v0.1.1
+#
+# docker image tag container-registry.okd.local/docker.io/openshift/origin-cluster-monitoring-operator:v3.11 docker.io/openshift/origin-cluster-monitoring-operator:v3.11
+# docker image tag container-registry.okd.local/quay.io/coreos/cluster-monitoring-operator:v0.1.1 quay.io/coreos/cluster-monitoring-operator:v0.1.1
+#
+# and next this work
+# docker pull quay.io/coreos/cluster-monitoring-operator:v0.1.1
+#
+#
+# Docker does not support private registry ... something that podman can do ... however I am stuck to docker 1.13.
+# Hopefully a workaround exists.
+# 1. first copy all images from external registries (docker.io and quay.io) into registry in container-registry guest virtual machine
+# 2. copy all images from container-registry into target guest virtual machine
+# 3. tag all image to remove reference of container-registry.okd.local
+# When a pull will be made in the guest virtual machine, docker will first check if the image is present and reuse it (
+# event if the image was pulled from quay.io in private container registry)
+# A workaround not merged https://www.suse.com/c/hackweek-project-docker-registry-mirror/
+- debug:
+    msg: "{{ item }}"
+
+- name: pull okd images from container registry to docker virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'docker pull {{ container_registry_fqdn }}/{{ item }}'
+  register: task_result
+  until: task_result.rc == 0
+  retries: 100
+  delay: 1
+
+- name: tag okd images in docker virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'docker image tag {{ container_registry_fqdn }}/{{ item }} {{ item }}'
+  register: task_result
+  until: task_result.rc == 0
+  retries: 100
+  delay: 1

@@ -100,12 +100,21 @@
       include_tasks: check_container_registry_machine.yml
       when: vm_ip == container_registry_ip
 
+    - name: pull okd images to container registry
+      include_tasks: pull_okd_images_to_container_registry.yml
+      when: vm_ip == container_registry_ip
+
     - name: check nfs virtual machine
       include_tasks: check_nfs_virtual_machine.yml
       when: vm_ip == nfs_ip
 
     - name: check okd master  virtual machine
       include_tasks: check_okd_master_virtual_machine.yml
+      when: vm_ip == okd_master_ip
+
+    - name: handle okd images in target virtual machine
+      include_tasks: handle_okd_images_in_target_virtual_machine.yml
+      loop: "{{ okd_images }}"
       when: vm_ip == okd_master_ip
 
   become_user: "{{ ansible_user_id }}"

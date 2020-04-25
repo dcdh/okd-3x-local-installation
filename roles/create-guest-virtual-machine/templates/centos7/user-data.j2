@@ -130,9 +130,6 @@ runcmd:
 resolv_conf:
   nameservers: ['{{ dns_ip }}']
 
-# TODO setup {{ ansible_user_id }} to use docker !!!
-# TODO docker registry mirror to {{ container_registry_fqdn }}
-
 packages:
   - nfs-utils
   - bind-utils
@@ -148,6 +145,13 @@ write_files:
       {{ lookup('file', domain_crt) | indent(width=6, indentfirst=False) }}
     owner: root:root
     path: /etc/pki/ca-trust/source/anchors/{{ container_registry_fqdn }}.crt
+    permissions: '0644'
+  - content: |
+      {
+        "registry-mirrors": ["https://{{ container_registry_fqdn }}"]
+      }
+    owner: root:root
+    path: /etc/docker/daemon.json
     permissions: '0644'
 
 runcmd:
