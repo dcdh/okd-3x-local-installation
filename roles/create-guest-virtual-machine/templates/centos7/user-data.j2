@@ -4,7 +4,7 @@
 preserve_hostname: False
 hostname: {{ vm_fqdn }}
 fqdn: {{ vm_fqdn }}
-manage_etc_hosts: true
+manage_etc_hosts: false
 cloud_config_modules:
   - resolv_conf
   - package-update-upgrade-install
