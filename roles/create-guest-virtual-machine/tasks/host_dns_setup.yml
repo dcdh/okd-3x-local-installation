@@ -2,14 +2,6 @@
 #    Howto do in Centos7 explains here : https://access.redhat.com/solutions/2817911
 #    It seems that it is not working as expected after rebooting. So I lock /etc/resolv.conf to ensure
 #    that no one will change it !
-- name: add "dns=none" in /etc/NetworkManager/NetworkManager.conf if not present
-  lineinfile:
-    path: /etc/NetworkManager/NetworkManager.conf
-    regexp: '^dns\=none'
-    insertafter: '^\[main\]'
-    line: dns=none
-    backup: yes
-
 - name: add {{ vm_name }} virtual machine ip {{ vm_ip }} entry into /etc/resolv.conf
   lineinfile:
     path: /etc/resolv.conf
