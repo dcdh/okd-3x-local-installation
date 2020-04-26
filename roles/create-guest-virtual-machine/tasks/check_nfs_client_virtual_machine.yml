@@ -4,14 +4,13 @@
 - name: assert hello file does not exists from nfs client virtual machine
   block:
     - name: get hello file
-      stat:
-        path: /data/hello
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} '[ -f /data/hello ] && echo "exist" || echo "does not exist"'
       register: has_hello_file
 
     - name: assert hello file does not exists
       assert:
         that:
-          - "has_hello_file.stat.exists == False"
+          - "has_hello_file.rc == 0 and has_hello_file.stdout == 'does not exist'"
         fail_msg: "hello file must not exists"
         success_msg: "hello file does not exists"
 
