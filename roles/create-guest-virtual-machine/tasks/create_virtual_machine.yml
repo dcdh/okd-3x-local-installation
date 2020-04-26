@@ -130,3 +130,7 @@
 - name: host dns setup
   include_tasks: host_dns_setup.yml
   when: vm_ip == dns_ip
+
+- name: host okd master setup
+  include_tasks: host_okd_master_setup.yml
+  when: vm_ip == okd_master_ip

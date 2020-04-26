@@ -29,3 +29,17 @@
       assert:
         that:
           - "'/etc/pki/ca-trust/source/anchors/container-registry.okd.local.crt: OK' == verification.stdout"
+
+# check /etc/rhsm/ca/redhat-uep.pem is present
+- name: should redhat-uep.pem file exists
+  block:
+    - name: get redhat-uep.pem file
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} '[ -f /etc/rhsm/ca/redhat-uep.pem ] && echo "exist" || echo "does not exist"'
+      register: has_redhat_uep_pem_file
+
+    - name: assert redhat-uep.pem file exists
+      assert:
+        that:
+          - "has_redhat_uep_pem_file.rc == 0 and has_redhat_uep_pem_file.stdout == 'exist'"
+        fail_msg: "redhat-uep.pem file must exists"
+        success_msg: "redhat-uep.pem file exists"

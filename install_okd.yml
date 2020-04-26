@@ -33,6 +33,7 @@
       - { ip: "{{ okd_master_ip }}", fqdn: "console.{{ okd_master_fqdn }}" }
 
     okd_images:
+      - 'registry.access.redhat.com/openshift3/registry-console:v3.11'
       - 'docker.io/openshift/oauth-proxy:v1.1.0'
       - 'docker.io/openshift/origin-cluster-monitoring-operator:v3.11'
       - 'docker.io/openshift/origin-cluster-monitoring-operator:v3.11.0'

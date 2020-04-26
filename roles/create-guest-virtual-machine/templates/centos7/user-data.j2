@@ -134,8 +134,48 @@ packages:
   - nfs-utils
   - bind-utils
   - docker-1.13.1
+  - tree
+  - telnet
+  - NetworkManager
+  - iptables-services
+  - origin-node
+  - ansible
+  - bash-completion
+  - dnsmasq
+  - ntp
+  - logrotate
+  - httpd-tools
+  - firewalld
+  - libselinux-python
+  - conntrack-tools
+  - openssl
+  - iproute
+  - python-dbus
+  - PyYAML
+  - yum-utils
+  - glusterfs-fuse
+  - device-mapper-multipath
+  - nfs-utils
+  - iscsi-initiator-utils
+  - ceph-common
+  - atomic
+  - cifs-utils
+  - samba-common
+  - samba-client
+  - iptables
+  - libselinux-python
+  - ntp
+  - python-httplib2
 
+# Add a fix relating to registry console no more working du to a manifest issue after the image has been re-uploaded
+# more information here:
+# https://github.com/cockpit-project/cockpit/issues/13654
+# https://github.com/openshift/openshift-ansible/pull/12122
 write_files:
+  - content: |
+    owner: root:root
+    path: /etc/rhsm/ca/redhat-uep.pem
+    permissions: '0644'
   - content: |
       supersede domain-name-servers {{ dns_ip }};
       timeout 300;
@@ -166,6 +206,8 @@ runcmd:
   - chmod 777 /data
   - mount nfs.local:/data /data
   - echo "nfs.local:/data  /data   nfs      rw,sync,hard,intr  0     0" >> /etc/fstab
+  - systemctl enable NetworkManager
+  - systemctl start NetworkManager
 
 {% elif false %}
 
