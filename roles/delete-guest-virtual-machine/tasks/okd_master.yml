@@ -1,0 +1,8 @@
+- name: flush /data/logging content in nfs virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ nfs_ip }} 'rm -rf /data/logging/*'
+
+- name: flush /data/registry content in nfs virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ nfs_ip }} 'rm -rf /data/registry/*'
+
+- name: flush /data/metrics content in nfs virtual machine
+  shell: ssh {{ ansible_user_id }}@{{ nfs_ip }} 'rm -rf /data/metrics/*'

@@ -52,3 +52,6 @@
 
 - include_tasks: dns.yml
   when: vm_ip == dns_ip
+
+- include_tasks: okd_master.yml
+  when: vm_ip == okd_master_ip

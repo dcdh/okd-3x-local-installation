@@ -13,6 +13,8 @@ etcd
 {{ okd_master_ip }} openshift_ip={{ okd_master_ip }} openshift_schedulable=true openshift_node_group_name="node-config-all-in-one"
 
 [OSEv3:vars]
+openshift_enable_unsupported_configurations=True
+
 openshift_additional_repos=[{'id': 'centos-paas', 'name': 'centos-paas', 'baseurl' :'https://buildlogs.centos.org/centos/7/paas/x86_64/openshift-origin311', 'gpgcheck' :'0', 'enabled' :'1'}]
 
 ansible_ssh_user={{ ansible_user_id }}
@@ -41,7 +43,6 @@ openshift_metrics_duration=7
 openshift_metrics_start_cluster=True
 openshift_metrics_cassandra_nodeselector={"node-role.kubernetes.io/infra": "true"}
 openshift_metrics_cassandra_pvc_size=5G
-openshift_metrics_cassandra_storage_type=dynamic
 openshift_metrics_cassandra_replicas=1
 openshift_metrics_cassandra_limits_memory=2Gi
 openshift_metrics_cassandra_requests_cpu=100m
@@ -53,6 +54,12 @@ openshift_metrics_hawkular_limits_cpu=1000m
 openshift_metrics_hawkular_replicas=1
 openshift_metrics_heapster_limits_memory=2Gi
 openshift_metrics_heapster_limits_cpu=1000m
+openshift_metrics_storage_kind=nfs
+openshift_metrics_storage_access_modes=['ReadWriteOnce']
+openshift_metrics_storage_host=nfs.local
+openshift_metrics_storage_nfs_directory=/data
+openshift_metrics_storage_volume_name=metrics
+openshift_metrics_storage_volume_size=5Gi
 
 openshift_logging_install_logging=True
 openshift_logging_use_ops=False
@@ -68,9 +75,24 @@ openshift_logging_es_cluster_size=1
 openshift_logging_es_cpu_request=100m
 openshift_logging_es_cpu_limit=1000m
 openshift_logging_es_memory_limit=4Gi
+openshift_logging_storage_kind=nfs
+openshift_logging_storage_access_modes=['ReadWriteOnce']
+openshift_logging_storage_host=nfs.local
+openshift_logging_storage_nfs_directory=/data
+openshift_logging_storage_volume_name=logging
+openshift_logging_storage_volume_size=10Gi
+openshift_logging_elasticsearch_storage_type=pvc
+openshift_logging_es_pvc_size=5Gi
+openshift_logging_es_pvc_storage_class_name=''
 openshift_logging_es_pvc_dynamic=True
-openshift_logging_es_pvc_size=5G
-logging_elasticsearch_rollout_override=false
+openshift_logging_es_pvc_prefix=logging
+
+openshift_hosted_registry_storage_kind=nfs
+openshift_hosted_registry_storage_access_modes=['ReadWriteMany']
+openshift_hosted_registry_storage_host=nfs.local
+openshift_hosted_registry_storage_nfs_directory=/data
+openshift_hosted_registry_storage_volume_name=registry
+openshift_hosted_registry_storage_volume_size=5Gi
 
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
 openshift_master_htpasswd_file='/etc/origin/master/htpasswd'

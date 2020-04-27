@@ -115,6 +115,10 @@ write_files:
 # Remove cloud-init when finished with it
 runcmd:
   - /usr/bin/mkdir /data
+  - /usr/bin/mkdir /data/logging
+  - /usr/bin/mkdir /data/registry
+  - /usr/bin/mkdir /data/metrics
+  - chmod -R 777 /data
   - systemctl stop network && systemctl start network
   - systemctl disable cloud-init.service
   - systemctl enable rpcbind nfs-server
