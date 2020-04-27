@@ -7,13 +7,16 @@
     group: root
     mode: "0644"
 
-- name: clone OpenShift ansible stuff from github
-  shell: "git clone https://github.com/openshift/openshift-ansible.git -b release-3.11 --depth=1 {{ vm_path }}/openshift-ansible"
+- name: get and configure OpenShift ansible
+  block:
+    - name: clone OpenShift ansible stuff from github
+      shell: "git clone https://github.com/openshift/openshift-ansible.git -b release-3.11 --depth=1 {{ vm_path }}/openshift-ansible"
 
-- name: generate inventory.ini
-  template:
-    src: "master_okd/inventory.ini.j2"
-    dest: "{{ vm_path }}/openshift-ansible/inventory.ini"
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_id }}"
-    mode: "0644"
+    - name: generate inventory.ini
+      template:
+        src: "master_okd/inventory.ini.j2"
+        dest: "{{ vm_path }}/openshift-ansible/inventory.ini"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: "0644"
+  become_user: "{{ ansible_user_id }}"
