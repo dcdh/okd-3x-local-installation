@@ -1,0 +1,7 @@
+---
+# defaults file for create-persistent-volume
+name:
+storage: "10Gi"
+base_path: "/local-storage"
+path: "{{ base_path }}/{{ name }}"
+vm_fqdn:

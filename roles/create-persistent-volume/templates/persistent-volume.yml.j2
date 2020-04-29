@@ -1,0 +1,14 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{ name }}-volume
+  labels:
+    name: {{ name }}-volume
+spec:
+  capacity:
+    storage: {{ storage }}
+  hostPath:
+    path: {{ path }}
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain

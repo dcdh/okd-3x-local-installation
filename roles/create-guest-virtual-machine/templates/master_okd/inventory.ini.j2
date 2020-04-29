@@ -37,6 +37,9 @@ osm_use_cockpit=true
 # https://github.com/cockpit-project/cockpit/issues/13654
 openshift_cockpit_deployer_image='registry.access.redhat.com/openshift3/registry-console:v3.11'
 
+# to enable glusterfs dynamic provisioning
+openshift_master_dynamic_provisioning_enabled=True
+
 openshift_metrics_image_version="v3.11"
 openshift_metrics_install_metrics=True
 openshift_metrics_duration=7

@@ -1,0 +1,13 @@
+- name: assert name variable is defined
+  assert:
+    that:
+      - "name is defined and name"
+    fail_msg: "name must be define"
+    success_msg: "name define to {{ name }}"
+
+- name: assert vm_fqdn variable is defined
+  assert:
+    that:
+      - "vm_fqdn is defined and vm_fqdn"
+    fail_msg: "vm_fqdn must be define"
+    success_msg: "vm_fqdn define to {{ vm_fqdn }}"

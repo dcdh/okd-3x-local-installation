@@ -1,0 +1,43 @@
+---
+# tasks file for create-persistent-volume
+
+- include_tasks: assert_preconditions.yml
+
+- name: create temp {{ name }} persistent volume yml definition file
+  tempfile:
+    state: file
+    suffix: temp
+  register: temp_persistent_volume_yml
+
+- name: generate {{ name }} persistent volume yml definition
+  template:
+    dest: "{{ temp_persistent_volume_yml.path }}"
+    src: persistent-volume.yml.j2
+
+- name: copy {{ name }} persistent volume yml definition into virtual machine
+  shell: scp -r -p {{ temp_persistent_volume_yml.path }} {{ ansible_user_id }}@{{ okd_master_fqdn }}:{{ temp_persistent_volume_yml.path }}
+
+- name: apply {{ name }} persistent volume
+  shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc create -f {{ temp_persistent_volume_yml.path }}'
+
+# https://kubernetes.io/docs/concepts/storage/volumes/#hostpath
+# "the files or directories created on the underlying hosts are only writable by root. You either need to run your process as root in a privileged Container or modify the file permissions on the host to be able to write to a hostPath volume"
+# expected behavior 750 with root:root when creating host path
+# https://docs.okd.io/3.11/admin_guide/manage_scc.html#use-the-hostpath-volume-plugin
+# the OpenShift documentation is not working ...
+- name: fix denied permission when using hostpath volume on {{ name }}
+  block:
+    - name: create {{ name }} persistent path directory
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'sudo mkdir -p {{ path }}'
+
+    - name: apply selinux permission on base path {{ base_path }}
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'sudo chcon -t svirt_sandbox_file_t {{ base_path }}'
+
+    - name: apply selinux permission on path {{ path }} and beyond
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'sudo chcon -Rt svirt_sandbox_file_t {{ path }}'
+
+    - name: only root user can modify the content - add group permission right to {{ base_path }}
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'sudo chmod 777 {{ base_path }}'
+
+    - name: only root user can modify the content - add group permission right to {{ path }}
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'sudo chmod 777 {{ path }}'

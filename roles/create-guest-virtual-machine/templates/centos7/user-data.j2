@@ -118,6 +118,8 @@ runcmd:
   - /usr/bin/mkdir /data/logging
   - /usr/bin/mkdir /data/registry
   - /usr/bin/mkdir /data/metrics
+  - /usr/bin/mkdir /data/nexus
+  - /usr/bin/mkdir /data/jenkins
   - chmod -R 777 /data
   - systemctl stop network && systemctl start network
   - systemctl disable cloud-init.service

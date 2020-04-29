@@ -1,0 +1,64 @@
+---
+- name: This playbook install OKD projects on a local server
+  hosts: localhost
+
+  vars:
+    okd_master_fqdn: "master.okd.local"
+
+  tasks:
+    - name: install ci/cd
+      block:
+        - name: create ci/cd project
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc new-project ci-cd --display-name="CI/CD" --description="CI/CD Components (Jenkins, Nexus, Pipeline)"'
+
+        ################################################################################################################
+        # nexus
+        ################################################################################################################
+        - name: handle nexus persistent volume
+          include_role:
+            name: create-persistent-volume
+          vars:
+            - name: "nexus"
+            - vm_fqdn: "master.okd.local"
+
+        - name: copy nexus template
+          shell: scp -r -p nexus-persistent-template.yml {{ ansible_user_id }}@{{ okd_master_fqdn }}:/tmp/nexus-persistent-template.yml
+
+        - name: deploy nexus
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f /tmp/nexus-persistent-template.yml | oc create -n ci-cd -f -'
+
+        - name: update nexus resources
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc set resources dc/nexus --limits=cpu=1,memory=1Gi --requests=cpu=200m,memory=1Gi -n ci-cd'
+
+        - name: wait until nexus deployment is finished
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc rollout status dc/nexus -n ci-cd'
+          register: task_result
+          until: "'successfully' in task_result.stdout"
+          retries: 120
+          delay: 5
+
+        ################################################################################################################
+        # jenkins
+        ################################################################################################################
+        - name: handle nexus persistent volume
+          include_role:
+            name: create-persistent-volume
+          vars:
+            - name: "jenkins"
+            - vm_fqdn: "master.okd.local"
+
+        # template coming from https://raw.githubusercontent.com/openshift/origin/master/examples/jenkins/jenkins-persistent-template.json
+        # my template just add a matchLabels on PVC
+        - name: copy jenkins template
+          shell: scp -r -p jenkins-persistent-template.yml {{ ansible_user_id }}@{{ okd_master_fqdn }}:/tmp/jenkins-persistent-template.yml
+
+        # I add to override version of openshift-login to 1.0.19 however last version - 1.0.22 - fails when logging in jenkins
+        - name: deploy jenkins
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc new-app -f /tmp/jenkins-persistent-template.yml -e INSTALL_PLUGINS=ssh-agent:1.15,openshift-login:1.0.19 -e MEMORY_LIMIT=1Gi -l app=jenkins -n ci-cd'
+
+        - name: wait until jenkins deployment is finished
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc rollout status dc/jenkins -n ci-cd'
+          register: task_result
+          until: "'successfully' in task_result.stdout"
+          retries: 120
+          delay: 5
