@@ -48,10 +48,11 @@
         path: "/home/{{ ansible_user_id }}/.ssh/known_hosts"
         state: absent
         regexp: '^.*{{ vm_ip }}.*$'
+
+    - include_tasks: dns.yml
+      when: vm_ip == dns_ip
+
+    - include_tasks: okd_master.yml
+      when: vm_ip == okd_master_ip
+
   become_user: "{{ ansible_user_id }}"
-
-- include_tasks: dns.yml
-  when: vm_ip == dns_ip
-
-- include_tasks: okd_master.yml
-  when: vm_ip == okd_master_ip
