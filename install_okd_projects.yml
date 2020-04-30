@@ -52,9 +52,18 @@
         - name: copy jenkins template
           shell: scp -r -p jenkins-persistent-template.yml {{ ansible_user_id }}@{{ okd_master_fqdn }}:/tmp/jenkins-persistent-template.yml
 
-        # I add to override version of openshift-login to 1.0.19 however last version - 1.0.22 - fails when logging in jenkins
+        # Deploy an old version of openshift jenkins to fix issue with the last version of openshift-login (1.0.22) by downgrading to version 1.0.19 and
+        # an access denied issue when creating jenkins workspace.
+        - name: push jenkins-2-centos7:e2a35ea into okd internal registry
+          block:
+            - name: tag image to internal registry
+              shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'docker tag docker.io/openshift/jenkins-2-centos7:e2a35ea docker-registry.default.svc:5000/openshift/jenkins:e2a35ea'
+
+            - name: log and push image into internal registry
+              shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u damien -p damien && docker login -p $(oc whoami -t) -u unused docker-registry.default.svc:5000 && docker push docker-registry.default.svc:5000/openshift/jenkins:e2a35ea'
+
         - name: deploy jenkins
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc new-app -f /tmp/jenkins-persistent-template.yml -e INSTALL_PLUGINS=ssh-agent:1.15,openshift-login:1.0.19 -e MEMORY_LIMIT=1Gi -l app=jenkins -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc new-app -f /tmp/jenkins-persistent-template.yml -p JENKINS_IMAGE_STREAM_TAG=jenkins:e2a35ea -p MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=ssh-agent:1.15 -l app=jenkins -n ci-cd'
 
         - name: wait until jenkins deployment is finished
           shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc rollout status dc/jenkins -n ci-cd'
@@ -62,3 +71,16 @@
           until: "'successfully' in task_result.stdout"
           retries: 120
           delay: 5
+
+    - name: handle event data spreader library
+      block:
+        - name: handle maven-repo persistent volume
+          include_role:
+            name: create-persistent-volume
+          vars:
+            - name: "maven-repo"
+            - vm_fqdn: "master.okd.local"
+
+        - name: install event data spreader pipeline
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/event-data-spreader/master/templates/event-data-spreader-build-pipeline.yml | oc create -f - -n ci-cd'
+
