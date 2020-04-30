@@ -1,0 +1,46 @@
+# fix: "mkdir: cannot create directory '/home/jenkins/data': Permission denied"
+# https://github.com/openshift/jenkins/issues/997
+
+- name: check action is done on container registry
+  fail:
+    msg: 'Must be executed on container registry'
+  when: vm_ip != container_registry_ip
+
+- name: get if openshift image is present on container registry
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'docker images  | grep e2a35ea > /dev/null && echo "exist" || echo "does not exist"'
+  register: openshift_jenkins_image
+
+- name: create openshift jenkins image on container registry
+  block:
+    - name: clone openshift jenkins
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'git clone https://github.com/openshift/jenkins.git /tmp/jenkins'
+
+    - name: checkout working revision e2a35ea
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'cd /tmp/jenkins && git checkout e2a35ea'
+
+    - name: build image revision e2a35ea - can be long ...
+      shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'cd /tmp/jenkins/2 && docker build -t docker.io/openshift/jenkins-2-centos7:e2a35ea .'
+  when: openshift_jenkins_image.rc == 0 and openshift_jenkins_image.stdout == 'does not exist'
+
+#- name: pull openshift jenkins image from host to container registry
+#  block:
+#    - name: tag image to container registry host
+#      shell: docker tag docker.io/openshift/jenkins-2-centos7:e2a35ea {{ container_registry_fqdn }}/docker.io/openshift/jenkins-2-centos7:e2a35ea
+#
+#    - name: pull image to container registry
+#  shell: docker pull {{ container_registry_fqdn }}/docker.io/openshift/jenkins-2-centos7:e2a35ea
+#
+#docker pull container-registry.okd.local/docker.io/openshift/jenkins-2-centos7:e2a35ea --dest-tls-verify=false
+
+
+#ssh damien@10.0.5.11 'skopeo copy docker://docker.io/openshift/jenkins-2-centos7:e2a35ea docker://container-registry.okd.local/docker.io/openshift/jenkins-2-centos7:e2a35ea --dest-tls-verify=false'
+#> ok marche pas ...
+#
+#skopeo copy docker-daemon:docker.io/openshift/jenkins-2-centos7:e2a35ea docker://container-registry.okd.local/docker.io/openshift/jenkins-2-centos7:e2a35ea --dest-tls-verify=false
+#> ok marche mais attention au transport ... (ici docker-daemon...)
+#
+#
+#ensuite je test le pull depuis le master ...
+#
+#docker pull container-registry.okd.local/docker.io/openshift/jenkins-2-centos7:e2a35ea
+#> ko !!!

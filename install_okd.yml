@@ -90,7 +90,7 @@
       - 'docker.io/openshift/jenkins-slave-base-centos7:v3.11'
       - 'docker.io/openshift/jenkins-slave-maven-centos7:v3.11'
       - 'docker.io/openshift/jenkins-slave-nodejs-centos7:v3.11'
-      - 'docker.io/openshift/jenkins-2-centos7:v3.11'
+      - 'docker.io/openshift/jenkins-2-centos7:e2a35ea'
       - 'docker.io/sonatype/nexus3:3.6.0'
       - 'docker.io/strimzi/operator:0.17.0'
       - 'docker.io/strimzi/kafka:0.17.0-kafka-2.4.0'

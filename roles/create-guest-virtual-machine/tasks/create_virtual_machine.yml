@@ -104,8 +104,13 @@
       include_tasks: check_container_registry_machine.yml
       when: vm_ip == container_registry_ip
 
-    - name: pull okd images to container registry
-      include_tasks: pull_okd_images_to_container_registry.yml
+    - name: build fixed openshift jenkins
+      include_tasks: build_fixed_openshift_jenkins.yml
+      when: vm_ip == container_registry_ip
+
+    - name: pull okd image to container registry
+      include_tasks: pull_okd_image_to_container_registry.yml
+      with_items: "{{ okd_images }}"
       when: vm_ip == container_registry_ip
 
     - name: check nfs virtual machine

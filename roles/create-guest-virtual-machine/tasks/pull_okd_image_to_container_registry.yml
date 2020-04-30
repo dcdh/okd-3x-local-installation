@@ -1,0 +1,26 @@
+# help here https://github.com/containers/skopeo/issues/199
+- name: check action is done on container registry
+  fail:
+    msg: 'Must be executed on container registry'
+  when: vm_ip != container_registry_ip
+
+- name: check if image is present or not in local registry
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'docker inspect {{ item }} > /dev/null 2>&1 && echo "in local registry" || echo "not in local registry"'
+  register: is_in_local_registry
+
+- name: set transport for specific local image - hack for docker.io/openshift/jenkins-2-centos7:e2a35ea
+  set_fact:
+    transport: 'docker-daemon:'
+  when: is_in_local_registry.stdout == 'in local registry'
+
+- name: set transport to remote registry otherwise
+  set_fact:
+    transport: 'docker://'
+  when: is_in_local_registry.stdout == 'not in local registry'
+
+- name: pull okd images to container registry
+  shell: ssh {{ ansible_user_id }}@{{ vm_ip }} 'skopeo copy {{ transport }}{{ item }} docker://{{ container_registry_fqdn }}/{{ item }} --dest-tls-verify=false'
+  register: task_result
+  until: task_result.rc == 0
+  retries: 100
+  delay: 1
