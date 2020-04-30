@@ -7,6 +7,14 @@
     group: root
     mode: "0644"
 
+- name: define adv-audit.yaml used by okd cluster for auditing
+  copy:
+    src: "master_okd/adv-audit.yaml"
+    dest: "/etc/origin/master/adv-audit.yaml"
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: get and configure OpenShift ansible
   block:
     - name: clone OpenShift ansible stuff from github

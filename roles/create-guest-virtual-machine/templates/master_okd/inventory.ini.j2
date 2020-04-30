@@ -101,6 +101,9 @@ openshift_hosted_registry_storage_volume_size=5Gi
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
 openshift_master_htpasswd_file='/etc/origin/master/htpasswd'
 
+openshift_master_audit_config={"enabled": true, "auditFilePath": "/var/lib/origin/audit-ocp.log", "maximumFileRetentionDays": 14, "maximumFileSizeMegabytes": 500, "maximumRetainedFiles": 5, "policyFile": "/etc/origin/master/adv-audit.yaml", "logFormat":"json"}
+openshift_master_audit_policyfile="/etc/origin/master/adv-audit.yaml"
+
 openshift_public_hostname=console.{{ okd_master_fqdn }}
 openshift_master_default_subdomain=apps.{{ okd_master_fqdn }}
 openshift_master_api_port=8443
