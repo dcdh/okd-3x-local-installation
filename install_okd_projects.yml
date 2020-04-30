@@ -84,3 +84,16 @@
         - name: install event data spreader pipeline
           shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/event-data-spreader/master/templates/event-data-spreader-build-pipeline.yml | oc create -f - -n ci-cd'
 
+    - name: handle eventstore quarkus sample application pipelines
+      block:
+        - name: install todo-write-app-pipeline
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-write-app-pipeline.yml | oc create -f - -n ci-cd'
+
+        - name: install todo-query-app-pipeline
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-query-app-pipeline.yml | oc create -f - -n ci-cd'
+
+        - name: install todo-email-notifier-app-pipeline
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-email-notifier-app-pipeline.yml | oc create -f - -n ci-cd'
+
+        - name: install todo-app-go-production-pipeline
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-app-go-production-pipeline.yml | oc create -f - -n ci-cd'
