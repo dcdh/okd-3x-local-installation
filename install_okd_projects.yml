@@ -97,3 +97,18 @@
 
         - name: install todo-app-go-production-pipeline
           shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-app-go-production-pipeline.yml | oc create -f - -n ci-cd'
+
+    - name: install Strimzi (kafka) operator
+      block:
+        - name: apply Strimzi configuration files
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-cluster-operator-0.17.0.yaml'
+
+        - name: apply policy to fix startup issue
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc adm policy add-cluster-role-to-user strimzi-cluster-operator-namespaced --serviceaccount strimzi-cluster-operator'
+
+        - name: apply policy to fix startup issue
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc adm policy add-cluster-role-to-user strimzi-entity-operator --serviceaccount strimzi-cluster-operator'
+
+        - name: apply policy to fix startup issue
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc adm policy add-cluster-role-to-user strimzi-topic-operator --serviceaccount strimzi-cluster-operator'
+
