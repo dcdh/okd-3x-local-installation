@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ansible-playbook install_okd.yml --ask-become-pass
+ansible-playbook install_infra.yml --ask-become-pass
 
 
 # TODO dynamic
