@@ -3,6 +3,7 @@
     command: list_vms
     uri: "qemu:///session"
   register: vms
+  become_user: "{{ ansible_user_id }}"
 
 - name: create {{ vm_name }} virtual machine
   block:
