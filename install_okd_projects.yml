@@ -9,7 +9,7 @@
     - name: install ci/cd
       block:
         - name: create ci/cd project
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc new-project ci-cd --display-name="CI/CD" --description="CI/CD Components (Jenkins, Nexus, Pipeline)"'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc new-project ci-cd --display-name="CI/CD" --description="CI/CD Components (Jenkins, Nexus, Pipeline)"'
 
         ################################################################################################################
         # nexus
@@ -25,13 +25,13 @@
           shell: scp -r -p nexus-persistent-template.yml {{ ansible_user_id }}@{{ okd_master_fqdn }}:/tmp/nexus-persistent-template.yml
 
         - name: deploy nexus
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f /tmp/nexus-persistent-template.yml | oc create -n ci-cd -f -'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f /tmp/nexus-persistent-template.yml | oc create -n ci-cd -f -'
 
         - name: update nexus resources
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc set resources dc/nexus --limits=cpu=1,memory=1Gi --requests=cpu=200m,memory=1Gi -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc set resources dc/nexus --limits=cpu=1,memory=1Gi --requests=cpu=200m,memory=1Gi -n ci-cd'
 
         - name: wait until nexus deployment is finished
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc rollout status dc/nexus -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc rollout status dc/nexus -n ci-cd'
           register: task_result
           until: "'successfully' in task_result.stdout"
           retries: 120
@@ -59,14 +59,14 @@
             - name: tag image to internal registry
               shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'docker tag docker.io/openshift/jenkins-2-centos7:e2a35ea docker-registry.default.svc:5000/openshift/jenkins:e2a35ea'
 
-            - name: log and push image into internal registry
+            - name: log in internal registry and push image - I cannot log using system admin
               shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u damien -p damien && docker login -p $(oc whoami -t) -u unused docker-registry.default.svc:5000 && docker push docker-registry.default.svc:5000/openshift/jenkins:e2a35ea'
 
         - name: deploy jenkins
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc new-app -f /tmp/jenkins-persistent-template.yml -p JENKINS_IMAGE_STREAM_TAG=jenkins:e2a35ea -p MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=ssh-agent:1.15 -l app=jenkins -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc new-app -f /tmp/jenkins-persistent-template.yml -p JENKINS_IMAGE_STREAM_TAG=jenkins:e2a35ea -p MEMORY_LIMIT=1Gi -e INSTALL_PLUGINS=ssh-agent:1.15 -l app=jenkins -n ci-cd'
 
         - name: wait until jenkins deployment is finished
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc rollout status dc/jenkins -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc rollout status dc/jenkins -n ci-cd'
           register: task_result
           until: "'successfully' in task_result.stdout"
           retries: 120
@@ -82,33 +82,70 @@
             - vm_fqdn: "master.okd.local"
 
         - name: install event data spreader pipeline
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/event-data-spreader/master/templates/event-data-spreader-build-pipeline.yml | oc create -f - -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f https://raw.githubusercontent.com/dcdh/event-data-spreader/master/templates/event-data-spreader-build-pipeline.yml | oc create -f - -n ci-cd'
 
     - name: handle eventstore quarkus sample application pipelines
       block:
         - name: install todo-write-app-pipeline
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-write-app-pipeline.yml | oc create -f - -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-write-app-pipeline.yml | oc create -f - -n ci-cd'
 
         - name: install todo-query-app-pipeline
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-query-app-pipeline.yml | oc create -f - -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-query-app-pipeline.yml | oc create -f - -n ci-cd'
 
         - name: install todo-email-notifier-app-pipeline
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-email-notifier-app-pipeline.yml | oc create -f - -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-email-notifier-app-pipeline.yml | oc create -f - -n ci-cd'
 
         - name: install todo-app-go-production-pipeline
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-app-go-production-pipeline.yml | oc create -f - -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/jenkins/todo-app-go-production-pipeline.yml | oc create -f - -n ci-cd'
 
-    - name: install Strimzi (kafka) operator
+    - name: create postgresql persistent statefulset template
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc create -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/postgresql-persistent-template.yml -n openshift'
+
+    - name: create mailhog-template.yml template
+      shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc create -f https://raw.githubusercontent.com/dcdh/eventstore-quarkus-sample-app/master/openshift/mailhog-template.yml -n openshift'
+
+    # Strimzi version 0.16.0 is used as I did not managed to make version 0.17.0 working (missing pods after launching broker)
+    # Only one instance of the cluster operator will be used. This instance will watch all namespaces to create kafka instances
+    - name: install Strimzi (kafka)
       block:
-        - name: apply Strimzi configuration files
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc apply -f https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.17.0/strimzi-cluster-operator-0.17.0.yaml'
+        - name: clone strimzi-kafka-operator
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'export STRIMZI_VERSION=0.16.0 && git clone -b $STRIMZI_VERSION --depth=1 https://github.com/strimzi/strimzi-kafka-operator /tmp/strimzi-kafka-operator'
+
+        - name: following documentation https://strimzi.io/docs/latest/#deploying-cluster-operator-to-watch-whole-cluster-str update 050-Deployment-strimzi-cluster-operator.yaml to make operator watching all projects
+          block:
+            - name: copy updater into master
+              shell: scp -r -p strimzi_watch_all_cluster_updater.sh {{ ansible_user_id }}@{{ okd_master_fqdn }}:/tmp/strimzi-kafka-operator/install/cluster-operator/strimzi_watch_all_cluster_updater.sh
+
+            - name: run updater to change Strimzi watching namespace to all
+              shell: ssh damien@10.0.5.50 '/tmp/strimzi-kafka-operator/install/cluster-operator/strimzi_watch_all_cluster_updater.sh'
+
+        - name: install cluster operator
+          shell: ssh damien@10.0.5.50 'oc login -u system:admin && oc create -f /tmp/strimzi-kafka-operator/install/cluster-operator -n openshift'
 
         - name: apply policy to fix startup issue
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc adm policy add-cluster-role-to-user strimzi-cluster-operator-namespaced --serviceaccount strimzi-cluster-operator'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc adm policy add-cluster-role-to-user strimzi-cluster-operator-namespaced --serviceaccount strimzi-cluster-operator -n openshift'
 
         - name: apply policy to fix startup issue
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc adm policy add-cluster-role-to-user strimzi-entity-operator --serviceaccount strimzi-cluster-operator'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc adm policy add-cluster-role-to-user strimzi-entity-operator --serviceaccount strimzi-cluster-operator -n openshift'
 
         - name: apply policy to fix startup issue
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc adm policy add-cluster-role-to-user strimzi-topic-operator --serviceaccount strimzi-cluster-operator'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc adm policy add-cluster-role-to-user strimzi-topic-operator --serviceaccount strimzi-cluster-operator -n openshift'
 
+        - name: install strimzi example templates like strimzi-ephemeral ...
+          shell: ssh damien@10.0.5.50 'oc login -u system:admin && oc create -f /tmp/strimzi-kafka-operator/examples/templates/cluster-operator -n openshift'
+
+    - name: install homologation project
+      block:
+        - name: create homologation project
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc new-project homologation --display-name="Homologation" --description="Homologation place for validation"'
+
+        - name: Kafka
+          block:
+            - name: deploy an ephemeral single instance Kafka broker
+              shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -n openshift strimzi-ephemeral -p CLUSTER_NAME=broker -p ZOOKEEPER_NODE_COUNT=1 -p KAFKA_NODE_COUNT=1 -p KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1 -p KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1  -l app=messaging | oc apply -f - -n homologation'
+
+            - name: deploy a single instance of Kafka Connect with no plug-in installed
+              shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -n openshift strimzi-connect-s2i -p CLUSTER_NAME=debezium -p KAFKA_CONNECT_BOOTSTRAP_SERVERS=broker-kafka-bootstrap:9092 -p KAFKA_CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1 -p KAFKA_CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1 -p KAFKA_CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1 -p KAFKA_CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE=false -p KAFKA_CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE=false  -l app=messaging | oc apply -f - -n homologation'
+
+            - name: kafka connect is waiting for an image homologation/debezium-connect:latest - build it !
+              shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && export DEBEZIUM_VERSION=0.10.0.Final && mkdir -p /tmp/debezium/plugins && cd /tmp/debezium/plugins && for PLUGIN in {mongodb,mysql,postgres}; do curl https://repo.maven.apache.org/maven2/io/debezium/debezium-connector-$PLUGIN/$DEBEZIUM_VERSION/debezium-connector-$PLUGIN-$DEBEZIUM_VERSION-plugin.tar.gz | tar xz; done && oc start-build debezium-connect --from-dir=. --follow -n homologation'

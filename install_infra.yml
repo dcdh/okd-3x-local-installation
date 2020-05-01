@@ -43,6 +43,7 @@
       - 'docker.io/openshift/origin-control-plane:v3.11.0'
       - 'docker.io/openshift/origin-deployer:v3.11'
       - 'docker.io/openshift/origin-deployer:v3.11.0'
+      - 'docker.io/openshift/origin-docker-builder:v3.11.0'
       - 'docker.io/openshift/origin-docker-registry:v3.11'
       - 'docker.io/openshift/origin-docker-registry:v3.11.0'
       - 'docker.io/openshift/origin-haproxy-router:v3.11'
