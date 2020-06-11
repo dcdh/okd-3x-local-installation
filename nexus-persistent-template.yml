@@ -182,6 +182,10 @@ objects:
           port: 8081
           protocol: TCP
           targetPort: 8081
+        - name: 8082-tcp
+          port: 8082
+          protocol: TCP
+          targetPort: 8082
       selector:
         deploymentconfig: ${SERVICE_NAME}
       sessionAffinity: None
