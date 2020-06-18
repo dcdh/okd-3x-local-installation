@@ -28,7 +28,7 @@
           shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc process -f /tmp/nexus-persistent-template.yml | oc create -n ci-cd -f -'
 
         - name: update nexus resources
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc set resources dc/nexus --limits=cpu=1,memory=1Gi --requests=cpu=200m,memory=1Gi -n ci-cd'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc set resources dc/nexus --limits=cpu=1,memory=2Gi --requests=cpu=1000m,memory=2Gi -n ci-cd'
 
         - name: wait until nexus deployment is finished
           shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc rollout status dc/nexus -n ci-cd'
@@ -137,7 +137,7 @@
     - name: install homologation project
       block:
         - name: create homologation project
-          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc new-project homologation --display-name="Homologation" --description="Homologation place for validation"'
+          shell: ssh {{ ansible_user_id }}@{{ okd_master_fqdn }} 'oc login -u system:admin && oc new-project homologation --display-name="homologation" --description="Homologation place for validation"'
 
         - name: Kafka
           block:
